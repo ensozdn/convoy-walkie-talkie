@@ -1,7 +1,7 @@
 // Vercel Serverless Function - LiveKit Token Generator
-import { AccessToken } from 'livekit-server-sdk';
+const { AccessToken } = require('livekit-server-sdk');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -63,4 +63,4 @@ export default async function handler(req, res) {
     console.error('Token generation error:', error);
     return res.status(500).json({ error: 'Token generation failed' });
   }
-}
+};
