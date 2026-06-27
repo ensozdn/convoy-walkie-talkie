@@ -102,30 +102,39 @@
             display: none;
         }
 
-        .room-info {
+        /* Kompakt Header */
+        .compact-header {
             display: flex;
-            justify-content: space-around;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 16px;
-            margin-bottom: 24px;
-        }
-
-        .info-item {
-            text-align: center;
-        }
-
-        .info-label {
-            font-size: 13px;
-            color: #64748b;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
             font-weight: 700;
-            margin-bottom: 6px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .info-value {
-            font-size: 24px;
-            font-weight: 900;
+        .user-badge {
             color: #0c4a6e;
+            font-weight: 800;
+        }
+
+        .count-badge {
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .status-badge {
+            color: #16a34a;
+            font-weight: 800;
+        }
+
+        .divider {
+            color: #94a3b8;
+            font-weight: 400;
         }
 
         .ptt-button {
@@ -223,55 +232,28 @@
             box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
         }
 
-        /* Tab Navigation */
-        .tab-navigation {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 16px;
-            background: #fff;
-            border: 3px solid #0284c7;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 800;
-            color: #0369a1;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-            color: #fff;
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         /* Map Styles */
         #map-container {
+            margin-top: 24px;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 3px solid #0284c7;
-            height: calc(100vh - 320px);
-            min-height: 400px;
         }
 
         #map {
-            height: 100%;
+            height: 350px;
             width: 100%;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            padding: 12px 16px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 1px;
         }
 
         .loading {
@@ -307,48 +289,34 @@
         </div>
 
         <div id="room-screen" class="screen">
-            <div class="header">
-                <h1>KONVOY KANALI</h1>
-                <p>Bağlı: <span id="user-name"></span></p>
-            </div>
-
-            <div class="room-info">
-                <div class="info-item">
-                    <div class="info-label">KATILIMCI</div>
-                    <div class="info-value"><span id="participant-count">0</span></div>
-                </div>
+            <!-- Kompakt header -->
+            <div class="compact-header">
+                <span class="user-badge"><span id="user-name"></span></span>
+                <span class="divider">•</span>
+                <span class="count-badge"><span id="participant-count">0</span> kişi</span>
+                <span class="divider">•</span>
+                <span class="status-badge" id="status">BAĞLI</span>
             </div>
 
             <div id="speakers">
                 <div class="no-speaker">Kimse konuşmuyor</div>
             </div>
 
-            <!-- Tab Navigation -->
-            <div class="tab-navigation">
-                <button class="tab-btn active" id="talk-tab">BAS & KONUŞ</button>
-                <button class="tab-btn" id="map-tab">HARİTA</button>
+            <div class="ptt-button" id="ptt-btn">
+                <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                <div class="ptt-text" id="ptt-text">BAS & KONUŞ</div>
             </div>
+            <div class="ptt-hint" id="ptt-hint">Basılı tutarak konuşun</div>
 
-            <!-- Talk Tab Content -->
-            <div class="tab-content active" id="talk-content">
-                <div class="ptt-button" id="ptt-btn">
-                    <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <line x1="12" y1="19" x2="12" y2="23"></line>
-                        <line x1="8" y1="23" x2="16" y2="23"></line>
-                    </svg>
-                    <div class="ptt-text" id="ptt-text">BAS & KONUŞ</div>
-                </div>
-                <div class="ptt-hint" id="ptt-hint">Basılı tutarak konuşun</div>
-                <div id="status">BAĞLI</div>
-            </div>
-
-            <!-- Map Tab Content -->
-            <div class="tab-content" id="map-content">
-                <div id="map-container">
-                    <div id="map"></div>
-                </div>
+            <!-- Harita -->
+            <div id="map-container">
+                <div class="map-header">KONVOY HARİTASI</div>
+                <div id="map"></div>
             </div>
             
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
@@ -393,31 +361,8 @@
         const disconnectBtn = document.getElementById('disconnect-btn');
         const status = document.getElementById('status');
         
-        // Tab elementleri
-        const talkTab = document.getElementById('talk-tab');
-        const mapTab = document.getElementById('map-tab');
-        const talkContent = document.getElementById('talk-content');
-        const mapContent = document.getElementById('map-content');
-
-        // Tab geçişi
-        talkTab.addEventListener('click', () => {
-            talkTab.classList.add('active');
-            mapTab.classList.remove('active');
-            talkContent.classList.add('active');
-            mapContent.classList.remove('active');
-        });
-
-        mapTab.addEventListener('click', () => {
-            mapTab.classList.add('active');
-            talkTab.classList.remove('active');
-            mapContent.classList.add('active');
-            talkContent.classList.remove('active');
-            
-            // Harita sekmesine geçince haritayı yeniden boyutlandır
-            if (map) {
-                setTimeout(() => map.invalidateSize(), 100);
-            }
-        });
+        // Konuşma kilidi için
+        let someoneIsSpeaking = false;
 
         let wakeLock = null;
         async function requestWakeLock() {
@@ -511,11 +456,19 @@
         });
 
         async function startSpeaking() {
+            // Hard Lock: Birisi konuşuyorsa buton bloklanır
+            if (someoneIsSpeaking) {
+                alert('Birisi konuşuyor, lütfen bekleyin');
+                return;
+            }
+            
             if (!localAudioTrack || isSpeaking) return;
             isSpeaking = true;
+            someoneIsSpeaking = true;
             await localAudioTrack.unmute();
             
             pttBtn.classList.add('active');
+            pttBtn.style.opacity = '1';
             pttIcon.setAttribute('stroke', '#ffffff');
             pttText.textContent = 'KONUŞUYORSUNUZ';
             pttHint.textContent = 'Bırakarak susun';
@@ -525,9 +478,11 @@
         async function stopSpeaking() {
             if (!localAudioTrack || !isSpeaking) return;
             isSpeaking = false;
+            someoneIsSpeaking = false;
             await localAudioTrack.mute();
             
             pttBtn.classList.remove('active');
+            pttBtn.style.opacity = '1';
             pttIcon.setAttribute('stroke', '#ffffff');
             pttText.textContent = 'BAS & KONUŞ';
             pttHint.textContent = 'Basılı tutarak konuşun';
@@ -545,6 +500,17 @@
             speakersDiv.innerHTML = '';
             
             const activeSpeakers = speakers.filter(p => !p.isLocal && p.isSpeaking);
+            
+            // Hard Lock: Birisi konuşuyorsa butonu kilitle
+            if (activeSpeakers.length > 0) {
+                someoneIsSpeaking = true;
+                pttBtn.style.opacity = '0.5';
+                pttBtn.style.pointerEvents = 'none';
+            } else {
+                someoneIsSpeaking = false;
+                pttBtn.style.opacity = '1';
+                pttBtn.style.pointerEvents = 'auto';
+            }
             
             if (activeSpeakers.length === 0) {
                 speakersDiv.innerHTML = '<div class="no-speaker">Kimse konuşmuyor</div>';
@@ -608,25 +574,42 @@
             }).addTo(map);
         }
 
-        function createCustomIcon(color, participantName) {
+        function createCustomIcon(color, participantName, speed = null) {
+            const speedText = speed !== null && speed > 0 ? `<div style="
+                position: absolute;
+                top: -25px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 900;
+                white-space: nowrap;
+            ">${Math.round(speed)} km/h</div>` : '';
+            
             return L.divIcon({
                 className: 'custom-marker',
                 html: `
-                    <div style="
-                        background-color: ${color};
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 50%;
-                        border: 4px solid white;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-weight: 900;
-                        color: white;
-                        font-size: 18px;
-                    ">
-                        ${participantName.charAt(0).toUpperCase()}
+                    <div style="position: relative;">
+                        ${speedText}
+                        <div style="
+                            background-color: ${color};
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            border: 4px solid white;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-weight: 900;
+                            color: white;
+                            font-size: 18px;
+                        ">
+                            ${participantName.charAt(0).toUpperCase()}
+                        </div>
                     </div>
                 `,
                 iconSize: [40, 40],
@@ -658,13 +641,15 @@
         function updateMyLocation() {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const { latitude, longitude } = position.coords;
-                    myLocation = { latitude, longitude };
+                    const { latitude, longitude, speed } = position.coords;
+                    // speed m/s cinsinden gelir, km/h'ye çevir
+                    const speedKmh = speed !== null ? speed * 3.6 : null;
+                    myLocation = { latitude, longitude, speed: speedKmh };
 
                     // Kendi konumumu haritada güncelle
-                    updateMyMarker(latitude, longitude);
+                    updateMyMarker(latitude, longitude, speedKmh);
 
-                    // Konumu diğer katılımcılara gönder
+                    // Konumu ve hızı diğer katılımcılara gönder
                     if (room && room.localParticipant) {
                         const locationData = {
                             type: 'location',
@@ -672,6 +657,7 @@
                             participantName: room.localParticipant.name || room.localParticipant.identity,
                             latitude,
                             longitude,
+                            speed: speedKmh,
                             timestamp: Date.now()
                         };
 
@@ -691,21 +677,28 @@
             );
         }
 
-        function updateMyMarker(lat, lng) {
+        function updateMyMarker(lat, lng, speed = null) {
             if (!map) return;
 
             const myId = room?.localParticipant?.sid || 'me';
             const myName = room?.localParticipant?.name || 'Ben';
             
             if (markers.has(myId)) {
-                markers.get(myId).setLatLng([lat, lng]);
+                // Marker'ı güncelle (konum + hız)
+                const marker = markers.get(myId);
+                marker.setLatLng([lat, lng]);
+                
+                // İkonu hız ile yeniden oluştur
+                const color = getParticipantColor(myId);
+                marker.setIcon(createCustomIcon(color, myName, speed));
             } else {
                 const color = getParticipantColor(myId);
                 const marker = L.marker([lat, lng], {
-                    icon: createCustomIcon(color, myName)
+                    icon: createCustomIcon(color, myName, speed)
                 }).addTo(map);
                 
-                marker.bindPopup(`<b>${myName}</b><br>Siz burdasınız`);
+                const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
+                marker.bindPopup(`<b>${myName}</b><br>Siz burdasınız${speedText}`);
                 markers.set(myId, marker);
                 
                 // Haritayı kendi konumuna ortala
@@ -725,7 +718,8 @@
                         data.participantId,
                         data.participantName,
                         data.latitude,
-                        data.longitude
+                        data.longitude,
+                        data.speed
                     );
                 }
             } catch (error) {
@@ -733,18 +727,25 @@
             }
         }
 
-        function updateParticipantMarker(participantId, participantName, lat, lng) {
+        function updateParticipantMarker(participantId, participantName, lat, lng, speed = null) {
             if (!map) return;
 
             if (markers.has(participantId)) {
-                markers.get(participantId).setLatLng([lat, lng]);
+                // Marker'ı güncelle (konum + hız)
+                const marker = markers.get(participantId);
+                marker.setLatLng([lat, lng]);
+                
+                // İkonu hız ile yeniden oluştur
+                const color = getParticipantColor(participantId);
+                marker.setIcon(createCustomIcon(color, participantName, speed));
             } else {
                 const color = getParticipantColor(participantId);
                 const marker = L.marker([lat, lng], {
-                    icon: createCustomIcon(color, participantName)
+                    icon: createCustomIcon(color, participantName, speed)
                 }).addTo(map);
                 
-                marker.bindPopup(`<b>${participantName}</b>`);
+                const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
+                marker.bindPopup(`<b>${participantName}</b>${speedText}`);
                 markers.set(participantId, marker);
             }
         }
