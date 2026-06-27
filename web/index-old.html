@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>🚗 Konvoy Telsiz</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #login-screen, #room-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        #room-screen {
+            display: none;
+        }
+
+        .title {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+
+        input {
+            width: 100%;
+            max-width: 400px;
+            background: #16213e;
+            border: 2px solid #0f3460;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        .btn {
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 18px 60px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .header {
+            background: #16213e;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .participants-info {
+            background: #0f3460;
+            padding: 15px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .speakers-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        .speaker-badge {
+            background: #e94560;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .no-speaker {
+            color: #666;
+            font-style: italic;
+        }
+
+        .ptt-container {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ptt-button {
+            width: 280px;
+            height: 280px;
+            border-radius: 140px;
+            background: #16213e;
+            border: 8px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .ptt-button:active,
+        .ptt-button.active {
+            background: #e94560;
+            border-color: #ff5277;
+            transform: scale(0.95);
+        }
+
+        .ptt-emoji {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        .ptt-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .ptt-hint {
+            font-size: 14px;
+            color: #aaa;
+            text-align: center;
+        }
+
+        .disconnect-btn {
+            margin: 20px;
+            background: #444;
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: #aaa;
+        }
+
+        #status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Giriş Ekranı -->
+    <div id="login-screen">
+        <div class="title">🚗 Konvoy Telsiz</div>
+        <div class="subtitle">Araç içi iletişim sistemi</div>
+        <input type="text" id="name-input" placeholder="İsminiz (örn: Sürücü 1)" autocomplete="off">
+        <button class="btn" id="join-btn">Konvoya Katıl</button>
+        <div class="loading" id="loading">Bağlanıyor...</div>
+    </div>
+
+    <!-- Telsiz Ekranı -->
+    <div id="room-screen">
+        <div class="header">
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">Konvoy Kanalı</div>
+            <div style="font-size: 14px; color: #aaa;">Bağlı Kullanıcı: <span id="user-name"></span></div>
+        </div>
+
+        <div class="participants-info">
+            <div style="font-size: 16px; font-weight: 600;">
+                👥 <span id="participant-count">0</span> Kişi Aktif
+            </div>
+        </div>
+
+        <div class="speakers-container" id="speakers">
+            <div class="no-speaker">Kimse konuşmuyor</div>
+        </div>
+
+        <div class="ptt-container">
+            <div class="ptt-button" id="ptt-btn">
+                <div class="ptt-emoji" id="ptt-emoji">🎤</div>
+                <div class="ptt-text" id="ptt-text">BAS & KONUŞ</div>
+                <div class="ptt-hint" id="ptt-hint">Basılı tutarak konuşun</div>
+            </div>
+        </div>
+
+        <button class="disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
+    </div>
+
+    <div id="status">Hazır</div>
+
+    <!-- LiveKit Web SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js"></script>
+    
+    <script>
+        // LiveKit'i global scope'a ekle
+        const LivekitClient = window.LivekitClient || window.LiveKit || window;
+        
+        // Backend URL - Vercel'de aynı domain
+        const BACKEND_URL = window.location.origin;
+        
+        let room = null;
+        let isSpeaking = false;
+        let localAudioTrack = null;
+        let participants = new Map();
+
+        // DOM Elements
+        const loginScreen = document.getElementById('login-screen');
+        const roomScreen = document.getElementById('room-screen');
+        const nameInput = document.getElementById('name-input');
+        const joinBtn = document.getElementById('join-btn');
+        const loading = document.getElementById('loading');
+        const userName = document.getElementById('user-name');
+        const participantCount = document.getElementById('participant-count');
+        const speakersDiv = document.getElementById('speakers');
+        const pttBtn = document.getElementById('ptt-btn');
+        const pttEmoji = document.getElementById('ptt-emoji');
+        const pttText = document.getElementById('ptt-text');
+        const pttHint = document.getElementById('ptt-hint');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const status = document.getElementById('status');
+
+        // Ekranı açık tut
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    status.textContent = '🔒 Ekran kilitli';
+                    console.log('Wake Lock aktif');
+                }
+            } catch (err) {
+                console.error('Wake Lock hatası:', err);
+            }
+        }
+
+        // Konvoya katıl
+        joinBtn.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('Lütfen bir isim girin!');
+                return;
+            }
+
+            loading.style.display = 'block';
+            joinBtn.disabled = true;
+            status.textContent = 'Token alınıyor...';
+
+            try {
+                // Backend'den token al
+                const response = await fetch(`${BACKEND_URL}/token?participantName=${encodeURIComponent(name)}`);
+                if (!response.ok) throw new Error('Token alınamadı');
+                
+                const data = await response.json();
+                status.textContent = 'Odaya bağlanıyor...';
+
+                // LiveKit Room oluştur
+                room = new LivekitClient.Room({
+                    adaptiveStream: true,
+                    dynacast: true,
+                });
+
+                // Event listeners
+                room.on('participantConnected', updateParticipants);
+                room.on('participantDisconnected', updateParticipants);
+                room.on('trackSubscribed', handleTrackSubscribed);
+                room.on('trackUnsubscribed', handleTrackUnsubscribed);
+                room.on('activeSpeakersChanged', updateSpeakers);
+
+                // Odaya bağlan
+                await room.connect(data.wsUrl, data.token);
+                
+                // Mikrofon hazırla (başta muted)
+                localAudioTrack = await LivekitClient.createLocalAudioTrack();
+                await room.localParticipant.publishTrack(localAudioTrack, { name: 'microphone' });
+                localAudioTrack.mute();
+
+                // UI güncelle
+                userName.textContent = name;
+                loginScreen.style.display = 'none';
+                roomScreen.style.display = 'flex';
+                updateParticipants();
+                
+                // Ekranı açık tut
+                await requestWakeLock();
+                
+                status.textContent = '✅ Bağlı';
+
+            } catch (error) {
+                alert('Bağlantı hatası: ' + error.message);
+                loading.style.display = 'none';
+                joinBtn.disabled = false;
+                status.textContent = '❌ Hata';
+            }
+        });
+
+        // Push-to-Talk (Bas-Konuş)
+        pttBtn.addEventListener('mousedown', startSpeaking);
+        pttBtn.addEventListener('mouseup', stopSpeaking);
+        pttBtn.addEventListener('mouseleave', stopSpeaking);
+        pttBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeaking(); });
+        pttBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopSpeaking(); });
+        pttBtn.addEventListener('touchcancel', stopSpeaking);
+
+        async function startSpeaking() {
+            if (!localAudioTrack || isSpeaking) return;
+            isSpeaking = true;
+            await localAudioTrack.unmute();
+            
+            pttBtn.classList.add('active');
+            pttEmoji.textContent = '🔴';
+            pttText.textContent = 'KONUŞUYORSUNUZ';
+            pttHint.textContent = 'Bırakarak susun';
+            status.textContent = '🎤 Konuşuyor...';
+        }
+
+        async function stopSpeaking() {
+            if (!localAudioTrack || !isSpeaking) return;
+            isSpeaking = false;
+            await localAudioTrack.mute();
+            
+            pttBtn.classList.remove('active');
+            pttEmoji.textContent = '🎤';
+            pttText.textContent = 'BAS & KONUŞ';
+            pttHint.textContent = 'Basılı tutarak konuşun';
+            status.textContent = '✅ Bağlı';
+        }
+
+        // Katılımcıları güncelle
+        function updateParticipants() {
+            if (!room || !room.participants) return;
+            const count = room.participants.size + 1; // +1 kendimiz
+            participantCount.textContent = count;
+        }
+
+        // Konuşanları güncelle
+        function updateSpeakers(speakers) {
+            speakersDiv.innerHTML = '';
+            
+            const activeSpeakers = speakers.filter(p => !p.isLocal && p.isSpeaking);
+            
+            if (activeSpeakers.length === 0) {
+                speakersDiv.innerHTML = '<div class="no-speaker">Kimse konuşmuyor</div>';
+            } else {
+                activeSpeakers.forEach(speaker => {
+                    const badge = document.createElement('div');
+                    badge.className = 'speaker-badge';
+                    badge.textContent = `🎤 ${speaker.identity} konuşuyor`;
+                    speakersDiv.appendChild(badge);
+                });
+            }
+        }
+
+        // Track yönetimi
+        function handleTrackSubscribed(track, publication, participant) {
+            if (track.kind === 'audio') {
+                const audioElement = track.attach();
+                document.body.appendChild(audioElement);
+                participants.set(participant.sid, { audioElement });
+            }
+        }
+
+        function handleTrackUnsubscribed(track, publication, participant) {
+            if (track.kind === 'audio') {
+                track.detach().forEach(el => el.remove());
+                participants.delete(participant.sid);
+            }
+        }
+
+        // Bağlantıyı kes
+        disconnectBtn.addEventListener('click', async () => {
+            if (wakeLock) {
+                await wakeLock.release();
+                wakeLock = null;
+            }
+            
+            if (room) {
+                room.disconnect();
+                room = null;
+            }
+            
+            loginScreen.style.display = 'flex';
+            roomScreen.style.display = 'none';
+            loading.style.display = 'none';
+            joinBtn.disabled = false;
+            nameInput.value = '';
+            status.textContent = 'Hazır';
+        });
+
+        // Sayfa kapanırken temizlik
+        window.addEventListener('beforeunload', () => {
+            if (room) room.disconnect();
+            if (wakeLock) wakeLock.release();
+        });
+    </script>
+</body>
+</html>
