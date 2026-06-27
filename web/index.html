@@ -320,6 +320,7 @@
             
             <button class="btn" id="join-btn">Konvoya Katıl</button>
             <div class="loading" id="loading">Bağlanıyor...</div>
+            <div id="login-status" style="display:none; margin-top:10px; text-align:center; color:#ef4444; font-weight:700;"></div>
         </div>
 
         <div id="room-screen" class="screen">
@@ -466,7 +467,6 @@
 
             joinBtn.disabled = true;
             loading.style.display = 'block';
-            status.textContent = 'Bağlanıyor...';
             
             // Audio context'i başlat (user interaction gerekli)
             initAudio();
@@ -512,13 +512,16 @@
                 await requestWakeLock();
                 initMap();
                 startLocationSharing();
-                status.textContent = 'BAĞLI';
+                
+                // Room ekranı açıldıktan sonra status güncelle
+                setTimeout(() => {
+                    status.textContent = 'BAĞLI';
+                }, 100);
 
             } catch (error) {
                 alert('Bağlantı hatası: ' + error.message);
                 loading.style.display = 'none';
                 joinBtn.disabled = false;
-                status.textContent = 'HATA';
             }
         }
 
