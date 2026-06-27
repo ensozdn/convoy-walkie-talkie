@@ -854,24 +854,6 @@
         function updateAllDistances() {
             if (!myLocation || !map) return;
             
-            // Her marker için mesafeyi güncelle
-            markers.forEach((marker, participantId) => {
-                const myId = room?.localParticipant?.sid || 'me';
-                if (participantId === myId) return; // Kendini atla
-                
-                const pos = marker.getLatLng();
-                const distance = calculateDistance(
-                    myLocation.latitude,
-                    myLocation.longitude,
-                    pos.lat,
-                    pos.lng
-                );
-                
-                // Marker'ın icon'unu mesafe ile güncelle
-                // (Bu marker'ın name ve speed bilgisini korumak gerekiyor)
-        function updateAllDistances() {
-            if (!myLocation || !map) return;
-            
             // Her katılımcı için mesafeyi hesapla ve güncelle
             participantData.forEach((data, participantId) => {
                 const myId = room?.localParticipant?.sid || 'me';
