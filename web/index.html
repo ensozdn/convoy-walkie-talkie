@@ -8,6 +8,10 @@
     <meta name="theme-color" content="#f0f4f8">
     <title>🚗 Konvoy Telsiz</title>
     <link rel="manifest" href="manifest.json">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         * {
             margin: 0;
@@ -219,6 +223,30 @@
             box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
         }
 
+        /* Map Styles */
+        #map-container {
+            margin-top: 24px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 3px solid #0284c7;
+        }
+
+        #map {
+            height: 350px;
+            width: 100%;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            padding: 12px 16px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -281,10 +309,17 @@
 
             <div id="status">BAĞLI</div>
             
+            <!-- Harita Bölümü -->
+            <div id="map-container">
+                <div class="map-header">KONVOY HARİTASI</div>
+                <div id="map"></div>
+            </div>
+            
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.5.7/dist/livekit-client.umd.min.js"></script>
     <script>
         const LivekitClient = window.LivekitClient || window.LiveKit || window;
@@ -294,6 +329,18 @@
         let isSpeaking = false;
         let localAudioTrack = null;
         let participants = new Map();
+        
+        // Harita değişkenleri
+        let map = null;
+        let markers = new Map();
+        let myLocation = null;
+        let locationInterval = null;
+        const LOCATION_UPDATE_INTERVAL = 5000; // 5 saniye
+        
+        // Farklı renkler için marker ikonları
+        const markerColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+        let colorIndex = 0;
+        const participantColors = new Map();
 
         const loginScreen = document.getElementById('login-screen');
         const roomScreen = document.getElementById('room-screen');
@@ -352,6 +399,7 @@
                 room.on('trackSubscribed', handleTrackSubscribed);
                 room.on('trackUnsubscribed', handleTrackUnsubscribed);
                 room.on('activeSpeakersChanged', updateSpeakers);
+                room.on('dataReceived', handleLocationData);
 
                 await room.connect(data.wsUrl, data.token);
                 
@@ -365,6 +413,8 @@
                 updateParticipants();
                 
                 await requestWakeLock();
+                initMap();
+                startLocationSharing();
                 status.textContent = 'BAĞLI';
 
             } catch (error) {
@@ -460,8 +510,162 @@
             if (wakeLock) {
                 wakeLock.release();
             }
+            if (locationInterval) {
+                clearInterval(locationInterval);
+            }
             location.reload();
         });
+
+        // Harita fonksiyonları
+        function initMap() {
+            map = L.map('map').setView([39.9334, 32.8597], 13); // Ankara merkez başlangıç
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(map);
+        }
+
+        function createCustomIcon(color, participantName) {
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <div style="
+                        background-color: ${color};
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 4px solid white;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 900;
+                        color: white;
+                        font-size: 18px;
+                    ">
+                        ${participantName.charAt(0).toUpperCase()}
+                    </div>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+        }
+
+        function getParticipantColor(participantId) {
+            if (!participantColors.has(participantId)) {
+                participantColors.set(participantId, markerColors[colorIndex % markerColors.length]);
+                colorIndex++;
+            }
+            return participantColors.get(participantId);
+        }
+
+        function startLocationSharing() {
+            if (!navigator.geolocation) {
+                console.error('Geolocation desteklenmiyor');
+                return;
+            }
+
+            // İlk konumu al
+            updateMyLocation();
+
+            // Her 5 saniyede bir güncelle
+            locationInterval = setInterval(updateMyLocation, LOCATION_UPDATE_INTERVAL);
+        }
+
+        function updateMyLocation() {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    myLocation = { latitude, longitude };
+
+                    // Kendi konumumu haritada güncelle
+                    updateMyMarker(latitude, longitude);
+
+                    // Konumu diğer katılımcılara gönder
+                    if (room && room.localParticipant) {
+                        const locationData = {
+                            type: 'location',
+                            participantId: room.localParticipant.sid,
+                            participantName: room.localParticipant.name || room.localParticipant.identity,
+                            latitude,
+                            longitude,
+                            timestamp: Date.now()
+                        };
+
+                        const encoder = new TextEncoder();
+                        const data = encoder.encode(JSON.stringify(locationData));
+                        room.localParticipant.publishData(data, { reliable: true });
+                    }
+                },
+                (error) => {
+                    console.error('Konum alınamadı:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function updateMyMarker(lat, lng) {
+            if (!map) return;
+
+            const myId = room?.localParticipant?.sid || 'me';
+            const myName = room?.localParticipant?.name || 'Ben';
+            
+            if (markers.has(myId)) {
+                markers.get(myId).setLatLng([lat, lng]);
+            } else {
+                const color = getParticipantColor(myId);
+                const marker = L.marker([lat, lng], {
+                    icon: createCustomIcon(color, myName)
+                }).addTo(map);
+                
+                marker.bindPopup(`<b>${myName}</b><br>Siz burdasınız`);
+                markers.set(myId, marker);
+                
+                // Haritayı kendi konumuna ortala
+                map.setView([lat, lng], 14);
+            }
+        }
+
+        function handleLocationData(payload, participant) {
+            const decoder = new TextDecoder();
+            const text = decoder.decode(payload);
+            
+            try {
+                const data = JSON.parse(text);
+                
+                if (data.type === 'location') {
+                    updateParticipantMarker(
+                        data.participantId,
+                        data.participantName,
+                        data.latitude,
+                        data.longitude
+                    );
+                }
+            } catch (error) {
+                console.error('Konum verisi parse edilemedi:', error);
+            }
+        }
+
+        function updateParticipantMarker(participantId, participantName, lat, lng) {
+            if (!map) return;
+
+            if (markers.has(participantId)) {
+                markers.get(participantId).setLatLng([lat, lng]);
+            } else {
+                const color = getParticipantColor(participantId);
+                const marker = L.marker([lat, lng], {
+                    icon: createCustomIcon(color, participantName)
+                }).addTo(map);
+                
+                marker.bindPopup(`<b>${participantName}</b>`);
+                markers.set(participantId, marker);
+            }
+        }
     </script>
 </body>
 </html>
