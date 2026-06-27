@@ -278,8 +278,30 @@
             color: #fff;
             font-weight: 800;
             font-size: 16px;
-            text-align: center;
-            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .route-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .route-toggle-btn:active {
+            transform: scale(0.95);
+        }
+
+        .route-toggle-btn.active {
+            background: #fff;
+            color: #0284c7;
         }
 
         .loading {
@@ -350,7 +372,10 @@
 
             <!-- Harita -->
             <div id="map-container">
-                <div class="map-header">KONVOY HARİTASI</div>
+                <div class="map-header">
+                    <span>KONVOY HARİTASI</span>
+                    <button class="route-toggle-btn" id="route-toggle-btn">Tüm Rotalar 👁️</button>
+                </div>
                 <div id="map"></div>
             </div>
             
@@ -382,6 +407,8 @@
         // Rota çizgisi (polyline) için
         let leaderRoute = null; // Liderin rota çizgisi
         let leaderRoutePoints = []; // Liderin GPS noktaları
+        let allRoutes = new Map(); // Herkesin rotası: {participantId: {polyline, points: []}}
+        let showAllRoutes = false; // Tüm rotaları göster/gizle
         
         // Farklı renkler için marker ikonları
         const markerColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
@@ -401,6 +428,7 @@
         const pttIcon = document.getElementById('ptt-icon');
         const pttText = document.getElementById('ptt-text');
         const pttHint = document.getElementById('ptt-hint');
+        const routeToggleBtn = document.getElementById('route-toggle-btn');
         const disconnectBtn = document.getElementById('disconnect-btn');
         const status = document.getElementById('status');
         
@@ -516,6 +544,9 @@
                 await requestWakeLock();
                 initMap();
                 startLocationSharing();
+                
+                // Rota toggle butonu
+                routeToggleBtn.addEventListener('click', toggleAllRoutes);
                 
                 // Room ekranı açıldıktan sonra status güncelle
                 setTimeout(() => {
@@ -895,6 +926,9 @@
                         updateLeaderRoute(data.latitude, data.longitude);
                     }
                     
+                    // Herkesin rotasını kaydet (arka planda)
+                    updateParticipantRoute(data.participantId, data.latitude, data.longitude);
+                    
                     updateParticipantMarker(
                         data.participantId,
                         data.participantName,
@@ -926,6 +960,72 @@
             } else {
                 // Varsa güncelle
                 leaderRoute.setLatLngs(leaderRoutePoints);
+            }
+        }
+
+        function updateParticipantRoute(participantId, lat, lng) {
+            if (!map) return;
+            
+            // Katılımcının rotasını al veya oluştur
+            if (!allRoutes.has(participantId)) {
+                allRoutes.set(participantId, {
+                    polyline: null,
+                    points: []
+                });
+            }
+            
+            const route = allRoutes.get(participantId);
+            route.points.push([lat, lng]);
+            
+            // Eğer "Tüm Rotalar" açıksa polyline'ı göster
+            if (showAllRoutes) {
+                const color = getParticipantColor(participantId);
+                
+                if (!route.polyline) {
+                    route.polyline = L.polyline(route.points, {
+                        color: color,
+                        weight: 2,
+                        opacity: 0.5,
+                        smoothFactor: 1
+                    }).addTo(map);
+                } else {
+                    route.polyline.setLatLngs(route.points);
+                }
+            }
+        }
+
+        function toggleAllRoutes() {
+            showAllRoutes = !showAllRoutes;
+            
+            if (showAllRoutes) {
+                // Butonu aktif yap
+                routeToggleBtn.classList.add('active');
+                routeToggleBtn.textContent = 'Rotaları Gizle 🙈';
+                
+                // Tüm rotaları göster
+                allRoutes.forEach((route, participantId) => {
+                    if (route.points.length > 0 && !route.polyline) {
+                        const color = getParticipantColor(participantId);
+                        route.polyline = L.polyline(route.points, {
+                            color: color,
+                            weight: 2,
+                            opacity: 0.5,
+                            smoothFactor: 1
+                        }).addTo(map);
+                    }
+                });
+            } else {
+                // Butonu pasif yap
+                routeToggleBtn.classList.remove('active');
+                routeToggleBtn.textContent = 'Tüm Rotalar 👁️';
+                
+                // Tüm rotaları gizle
+                allRoutes.forEach((route) => {
+                    if (route.polyline) {
+                        map.removeLayer(route.polyline);
+                        route.polyline = null;
+                    }
+                });
             }
         }
 
