@@ -163,72 +163,6 @@
             font-weight: 400;
         }
 
-        /* Konvoy Üyeleri Listesi */
-        .convoy-members {
-            margin-top: 20px;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-radius: 14px;
-            padding: 16px;
-            border: 3px solid #0284c7;
-        }
-
-        .convoy-members-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: #0c4a6e;
-            margin-bottom: 12px;
-            text-align: center;
-            letter-spacing: 1px;
-        }
-
-        .member-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .member-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fff;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 2px solid #bae6fd;
-        }
-
-        .member-name {
-            font-weight: 700;
-            color: #0c4a6e;
-            font-size: 14px;
-        }
-
-        .member-battery {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 800;
-            font-size: 13px;
-        }
-
-        .battery-high {
-            color: #16a34a; /* Yeşil */
-        }
-
-        .battery-medium {
-            color: #f59e0b; /* Sarı */
-        }
-
-        .battery-low {
-            color: #ef4444; /* Kırmızı */
-        }
-
-        .leader-star {
-            color: #fbbf24;
-            font-size: 16px;
-            margin-left: 4px;
-        }
-
         .ptt-button {
             width: 240px;
             height: 240px;
@@ -421,16 +355,6 @@
                 <span class="status-badge" id="status">BAĞLI</span>
             </div>
 
-            <!-- Konvoy Üyeleri Listesi -->
-            <div class="convoy-members">
-                <div class="convoy-members-title">KONVOY ÜYELERİ</div>
-                <div class="member-list" id="member-list">
-                    <div class="member-item">
-                        <span class="member-name">Yükleniyor...</span>
-                    </div>
-                </div>
-            </div>
-
             <div id="speakers">
                 <div class="no-speaker">Kimse konuşmuyor</div>
             </div>
@@ -475,12 +399,10 @@
         // Harita değişkenleri
         let map = null;
         let markers = new Map();
-        let participantData = new Map(); // {participantId: {name, speed, lat, lng, isLeader, battery}}
+        let participantData = new Map(); // {participantId: {name, speed, lat, lng, isLeader}}
         let myLocation = null;
         let locationInterval = null;
         const LOCATION_UPDATE_INTERVAL = 5000; // 5 saniye
-        let batteryLevel = 100; // Kendi batarya seviyem
-        let batteryInterval = null;
         
         // Rota çizgisi (polyline) için
         let leaderRoute = null; // Liderin rota çizgisi
@@ -509,7 +431,6 @@
         const routeToggleBtn = document.getElementById('route-toggle-btn');
         const disconnectBtn = document.getElementById('disconnect-btn');
         const status = document.getElementById('status');
-        const memberList = document.getElementById('member-list');
         
         // Konuşma kilidi için
         let someoneIsSpeaking = false;
@@ -623,7 +544,6 @@
                 await requestWakeLock();
                 initMap();
                 startLocationSharing();
-                startBatteryMonitoring();
                 
                 // Rota toggle butonu
                 routeToggleBtn.addEventListener('click', toggleAllRoutes);
@@ -881,73 +801,6 @@
             return participantColors.get(participantId);
         }
 
-        function startBatteryMonitoring() {
-            // Navigator Battery API kullan (destekleniyorsa)
-            if ('getBattery' in navigator) {
-                navigator.getBattery().then((battery) => {
-                    // İlk batarya seviyesini al
-                    batteryLevel = Math.round(battery.level * 100);
-                    updateMemberList();
-                    
-                    // Batarya değişikliklerini dinle
-                    battery.addEventListener('levelchange', () => {
-                        batteryLevel = Math.round(battery.level * 100);
-                        updateMemberList(); // Liste güncelle
-                    });
-                });
-            } else {
-                // API desteklenmiyorsa, varsayılan değer kullan
-                batteryLevel = 100;
-            }
-            
-            // Her 30 saniyede bir member list'i güncelle
-            batteryInterval = setInterval(() => {
-                updateMemberList();
-            }, 30000);
-        }
-
-        function updateMemberList() {
-            if (!memberList) return;
-            
-            memberList.innerHTML = '';
-            
-            // Kendi bilgimi ekle
-            const myId = room?.localParticipant?.sid || 'me';
-            const myName = room?.localParticipant?.name || 'Ben';
-            addMemberToList(myName, batteryLevel, isLeader);
-            
-            // Diğer katılımcıları ekle
-            participantData.forEach((data, participantId) => {
-                if (participantId !== myId) {
-                    addMemberToList(data.name, data.battery || 100, data.isLeader);
-                }
-            });
-        }
-
-        function addMemberToList(name, battery, isLeaderMember) {
-            const memberItem = document.createElement('div');
-            memberItem.className = 'member-item';
-            
-            // Batarya rengi belirle
-            let batteryClass = 'battery-high';
-            if (battery < 20) {
-                batteryClass = 'battery-low';
-            } else if (battery < 50) {
-                batteryClass = 'battery-medium';
-            }
-            
-            memberItem.innerHTML = `
-                <span class="member-name">
-                    ${name}${isLeaderMember ? '<span class="leader-star">⭐</span>' : ''}
-                </span>
-                <span class="member-battery ${batteryClass}">
-                    🔋 ${battery}%
-                </span>
-            `;
-            
-            memberList.appendChild(memberItem);
-        }
-
         function startLocationSharing() {
             if (!navigator.geolocation) {
                 console.error('Geolocation desteklenmiyor');
@@ -982,7 +835,6 @@
                             longitude,
                             speed: speedKmh,
                             isLeader: isLeader, // Lider bilgisi ekle
-                            battery: batteryLevel, // Batarya seviyesi ekle
                             timestamp: Date.now()
                         };
 
@@ -1083,12 +935,8 @@
                         data.latitude,
                         data.longitude,
                         data.speed,
-                        data.isLeader,
-                        data.battery
+                        data.isLeader
                     );
-                    
-                    // Konvoy üyeleri listesini güncelle
-                    updateMemberList();
                 }
             } catch (error) {
                 console.error('Konum verisi parse edilemedi:', error);
@@ -1181,7 +1029,7 @@
             }
         }
 
-        function updateParticipantMarker(participantId, participantName, lat, lng, speed = null, isLeaderMarker = false, battery = null) {
+        function updateParticipantMarker(participantId, participantName, lat, lng, speed = null, isLeaderMarker = false) {
             if (!map) return;
 
             // Katılımcı verisini sakla
@@ -1190,8 +1038,7 @@
                 speed: speed,
                 lat: lat,
                 lng: lng,
-                isLeader: isLeaderMarker,
-                battery: battery
+                isLeader: isLeaderMarker
             });
 
             // Mesafeyi hesapla
