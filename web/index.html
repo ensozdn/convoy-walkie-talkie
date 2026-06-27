@@ -374,7 +374,7 @@
             <div id="map-container">
                 <div class="map-header">
                     <span>KONVOY HARİTASI</span>
-                    <button class="route-toggle-btn" id="route-toggle-btn">Tüm Rotalar 👁️</button>
+                    <button class="route-toggle-btn" id="route-toggle-btn">Tüm Rotalar</button>
                 </div>
                 <div id="map"></div>
             </div>
@@ -1000,7 +1000,7 @@
             if (showAllRoutes) {
                 // Butonu aktif yap
                 routeToggleBtn.classList.add('active');
-                routeToggleBtn.textContent = 'Rotaları Gizle 🙈';
+                routeToggleBtn.textContent = 'Rotaları Gizle';
                 
                 // Tüm rotaları göster
                 allRoutes.forEach((route, participantId) => {
@@ -1017,7 +1017,7 @@
             } else {
                 // Butonu pasif yap
                 routeToggleBtn.classList.remove('active');
-                routeToggleBtn.textContent = 'Tüm Rotalar 👁️';
+                routeToggleBtn.textContent = 'Tüm Rotalar';
                 
                 // Tüm rotaları gizle
                 allRoutes.forEach((route) => {
