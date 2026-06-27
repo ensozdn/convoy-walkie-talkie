@@ -147,18 +147,16 @@
             transform: scale(0.94);
         }
 
-        .ptt-icon {
-            width: 90px;
-            height: 90px;
-            color: #fff;
-            margin-bottom: 16px;
+        .ptt-emoji {
+            font-size: 80px;
+            margin-bottom: 10px;
         }
 
         .ptt-text {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 900;
             color: #fff;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .ptt-hint {
@@ -243,24 +241,24 @@
     <div class="container">
         <div id="login-screen" class="screen">
             <div class="header">
-                <h1>KONVOY TELSİZ</h1>
+                <h1>🚗 Konvoy Telsiz</h1>
                 <p>Araç içi iletişim sistemi</p>
             </div>
             <input type="text" id="name-input" placeholder="İsminiz (örn: Sürücü 1)" autocomplete="off">
             <button class="btn" id="join-btn">Konvoya Katıl</button>
-            <div class="loading" id="loading">Bağlanıyor...</div>
+            <div class="loading" id="loading">⏳ Bağlanıyor...</div>
         </div>
 
         <div id="room-screen" class="screen">
             <div class="header">
-                <h1>KONVOY KANALI</h1>
+                <h1>🚗 Konvoy Kanalı</h1>
                 <p>Bağlı: <span id="user-name"></span></p>
             </div>
 
             <div class="room-info">
                 <div class="info-item">
                     <div class="info-label">KATILIMCI</div>
-                    <div class="info-value"><span id="participant-count">0</span></div>
+                    <div class="info-value">👥 <span id="participant-count">0</span></div>
                 </div>
             </div>
 
@@ -269,17 +267,12 @@
             </div>
 
             <div class="ptt-button" id="ptt-btn">
-                <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
+                <div class="ptt-emoji" id="ptt-emoji">🎤</div>
                 <div class="ptt-text" id="ptt-text">BAS & KONUŞ</div>
             </div>
             <div class="ptt-hint" id="ptt-hint">Basılı tutarak konuşun</div>
 
-            <div id="status">BAĞLI</div>
+            <div id="status">✅ Bağlı</div>
             
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
         </div>
@@ -304,7 +297,7 @@
         const participantCount = document.getElementById('participant-count');
         const speakersDiv = document.getElementById('speakers');
         const pttBtn = document.getElementById('ptt-btn');
-        const pttIcon = document.getElementById('ptt-icon');
+        const pttEmoji = document.getElementById('ptt-emoji');
         const pttText = document.getElementById('ptt-text');
         const pttHint = document.getElementById('ptt-hint');
         const disconnectBtn = document.getElementById('disconnect-btn');
@@ -336,7 +329,7 @@
 
             joinBtn.disabled = true;
             loading.style.display = 'block';
-            status.textContent = 'Bağlanıyor...';
+            status.textContent = '🔄 Bağlanıyor...';
 
             try {
                 const response = await fetch(`${BACKEND_URL}/token?participantName=${encodeURIComponent(name)}`);
@@ -365,13 +358,13 @@
                 updateParticipants();
                 
                 await requestWakeLock();
-                status.textContent = 'BAĞLI';
+                status.textContent = '✅ Bağlı';
 
             } catch (error) {
                 alert('Bağlantı hatası: ' + error.message);
                 loading.style.display = 'none';
                 joinBtn.disabled = false;
-                status.textContent = 'HATA';
+                status.textContent = '❌ Hata';
             }
         }
 
@@ -393,10 +386,10 @@
             await localAudioTrack.unmute();
             
             pttBtn.classList.add('active');
-            pttIcon.setAttribute('stroke', '#ffffff');
+            pttEmoji.textContent = '🔴';
             pttText.textContent = 'KONUŞUYORSUNUZ';
             pttHint.textContent = 'Bırakarak susun';
-            status.textContent = 'Konuşuyor...';
+            status.textContent = '🎤 Konuşuyor...';
         }
 
         async function stopSpeaking() {
@@ -405,10 +398,10 @@
             await localAudioTrack.mute();
             
             pttBtn.classList.remove('active');
-            pttIcon.setAttribute('stroke', '#ffffff');
+            pttEmoji.textContent = '🎤';
             pttText.textContent = 'BAS & KONUŞ';
             pttHint.textContent = 'Basılı tutarak konuşun';
-            status.textContent = 'BAĞLI';
+            status.textContent = '✅ Bağlı';
         }
 
         function updateParticipants() {
@@ -430,7 +423,7 @@
             activeSpeakers.forEach(speaker => {
                 const div = document.createElement('div');
                 div.className = 'speaker-item';
-                div.textContent = `${speaker.name || speaker.identity}`;
+                div.textContent = `🔊 ${speaker.name || speaker.identity}`;
                 speakersDiv.appendChild(div);
             });
         }
