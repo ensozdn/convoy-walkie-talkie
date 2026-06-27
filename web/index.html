@@ -337,6 +337,7 @@
         // Harita değişkenleri
         let map = null;
         let markers = new Map();
+        let participantData = new Map(); // {participantId: {name, speed, lat, lng}}
         let myLocation = null;
         let locationInterval = null;
         const LOCATION_UPDATE_INTERVAL = 5000; // 5 saniye
@@ -617,7 +618,28 @@
             }).addTo(map);
         }
 
-        function createCustomIcon(color, participantName, speed = null) {
+        // Mesafe hesaplama (Haversine formülü - km cinsinden)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Dünya yarıçapı (km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // km
+        }
+
+        // Mesafeyi formatla
+        function formatDistance(km) {
+            if (km < 1) {
+                return Math.round(km * 1000) + 'm';
+            } else {
+                return km.toFixed(1) + 'km';
+            }
+        }
+
+        function createCustomIcon(color, participantName, speed = null, distance = null) {
             const speedText = speed !== null && speed > 0 ? `<div style="
                 position: absolute;
                 top: -25px;
@@ -631,6 +653,20 @@
                 font-weight: 900;
                 white-space: nowrap;
             ">${Math.round(speed)} km/h</div>` : '';
+            
+            const distanceText = distance !== null ? `<div style="
+                position: absolute;
+                bottom: -25px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(34,139,34,0.9);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 900;
+                white-space: nowrap;
+            ">${distance}</div>` : '';
             
             return L.divIcon({
                 className: 'custom-marker',
@@ -653,6 +689,7 @@
                         ">
                             ${participantName.charAt(0).toUpperCase()}
                         </div>
+                        ${distanceText}
                     </div>
                 `,
                 iconSize: [40, 40],
@@ -731,13 +768,13 @@
                 const marker = markers.get(myId);
                 marker.setLatLng([lat, lng]);
                 
-                // İkonu hız ile yeniden oluştur
+                // İkonu hız ile yeniden oluştur (mesafe yok - kendisi)
                 const color = getParticipantColor(myId);
-                marker.setIcon(createCustomIcon(color, myName, speed));
+                marker.setIcon(createCustomIcon(color, myName, speed, null));
             } else {
                 const color = getParticipantColor(myId);
                 const marker = L.marker([lat, lng], {
-                    icon: createCustomIcon(color, myName, speed)
+                    icon: createCustomIcon(color, myName, speed, null)
                 }).addTo(map);
                 
                 const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
@@ -747,6 +784,52 @@
                 // Haritayı kendi konumuna ortala
                 map.setView([lat, lng], 14);
             }
+            
+            // Diğer katılımcıların mesafelerini güncelle
+            updateAllDistances();
+        }
+        
+        function updateAllDistances() {
+            if (!myLocation || !map) return;
+            
+            // Her marker için mesafeyi güncelle
+            markers.forEach((marker, participantId) => {
+                const myId = room?.localParticipant?.sid || 'me';
+                if (participantId === myId) return; // Kendini atla
+                
+                const pos = marker.getLatLng();
+                const distance = calculateDistance(
+                    myLocation.latitude,
+                    myLocation.longitude,
+                    pos.lat,
+                    pos.lng
+                );
+                
+                // Marker'ın icon'unu mesafe ile güncelle
+                // (Bu marker'ın name ve speed bilgisini korumak gerekiyor)
+        function updateAllDistances() {
+            if (!myLocation || !map) return;
+            
+            // Her katılımcı için mesafeyi hesapla ve güncelle
+            participantData.forEach((data, participantId) => {
+                const myId = room?.localParticipant?.sid || 'me';
+                if (participantId === myId) return; // Kendini atla
+                
+                const distance = calculateDistance(
+                    myLocation.latitude,
+                    myLocation.longitude,
+                    data.lat,
+                    data.lng
+                );
+                
+                // Marker'ı mesafe ile güncelle
+                if (markers.has(participantId)) {
+                    const marker = markers.get(participantId);
+                    const color = getParticipantColor(participantId);
+                    const formattedDistance = formatDistance(distance);
+                    marker.setIcon(createCustomIcon(color, data.name, data.speed, formattedDistance));
+                }
+            });
         }
 
         function handleLocationData(payload, participant) {
@@ -773,22 +856,43 @@
         function updateParticipantMarker(participantId, participantName, lat, lng, speed = null) {
             if (!map) return;
 
+            // Katılımcı verisini sakla
+            participantData.set(participantId, {
+                name: participantName,
+                speed: speed,
+                lat: lat,
+                lng: lng
+            });
+
+            // Mesafeyi hesapla
+            let distance = null;
+            if (myLocation) {
+                const distanceKm = calculateDistance(
+                    myLocation.latitude,
+                    myLocation.longitude,
+                    lat,
+                    lng
+                );
+                distance = formatDistance(distanceKm);
+            }
+
             if (markers.has(participantId)) {
-                // Marker'ı güncelle (konum + hız)
+                // Marker'ı güncelle (konum + hız + mesafe)
                 const marker = markers.get(participantId);
                 marker.setLatLng([lat, lng]);
                 
-                // İkonu hız ile yeniden oluştur
+                // İkonu mesafe ile yeniden oluştur
                 const color = getParticipantColor(participantId);
-                marker.setIcon(createCustomIcon(color, participantName, speed));
+                marker.setIcon(createCustomIcon(color, participantName, speed, distance));
             } else {
                 const color = getParticipantColor(participantId);
                 const marker = L.marker([lat, lng], {
-                    icon: createCustomIcon(color, participantName, speed)
+                    icon: createCustomIcon(color, participantName, speed, distance)
                 }).addTo(map);
                 
                 const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
-                marker.bindPopup(`<b>${participantName}</b>${speedText}`);
+                const distanceText = distance ? `<br>Mesafe: ${distance}` : '';
+                marker.bindPopup(`<b>${participantName}</b>${speedText}${distanceText}`);
                 markers.set(participantId, marker);
             }
         }
