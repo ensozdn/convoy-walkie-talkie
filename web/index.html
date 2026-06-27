@@ -520,9 +520,17 @@
         function initMap() {
             map = L.map('map').setView([39.9334, 32.8597], 13); // Ankara merkez başlangıç
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
+            // Uydu görüntüsü katmanı (Apple Maps gibi)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Esri',
                 maxZoom: 19
+            }).addTo(map);
+            
+            // Yol isimleri ve etiketler overlay
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+                attribution: '© CARTO',
+                maxZoom: 19,
+                subdomains: 'abcd'
             }).addTo(map);
         }
 
