@@ -223,28 +223,55 @@
             box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
         }
 
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px;
+            background: #fff;
+            border: 3px solid #0284c7;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #0369a1;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         /* Map Styles */
         #map-container {
-            margin-top: 24px;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 3px solid #0284c7;
+            height: calc(100vh - 320px);
+            min-height: 400px;
         }
 
         #map {
-            height: 350px;
+            height: 100%;
             width: 100%;
-        }
-
-        .map-header {
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-            padding: 12px 16px;
-            color: #fff;
-            font-weight: 800;
-            font-size: 16px;
-            text-align: center;
-            letter-spacing: 1px;
         }
 
         .loading {
@@ -296,23 +323,32 @@
                 <div class="no-speaker">Kimse konuşmuyor</div>
             </div>
 
-            <div class="ptt-button" id="ptt-btn">
-                <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-                <div class="ptt-text" id="ptt-text">BAS & KONUŞ</div>
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" id="talk-tab">🎤 BAS & KONUŞ</button>
+                <button class="tab-btn" id="map-tab">🗺️ HARİTA</button>
             </div>
-            <div class="ptt-hint" id="ptt-hint">Basılı tutarak konuşun</div>
 
-            <div id="status">BAĞLI</div>
-            
-            <!-- Harita Bölümü -->
-            <div id="map-container">
-                <div class="map-header">KONVOY HARİTASI</div>
-                <div id="map"></div>
+            <!-- Talk Tab Content -->
+            <div class="tab-content active" id="talk-content">
+                <div class="ptt-button" id="ptt-btn">
+                    <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    <div class="ptt-text" id="ptt-text">BAS & KONUŞ</div>
+                </div>
+                <div class="ptt-hint" id="ptt-hint">Basılı tutarak konuşun</div>
+                <div id="status">BAĞLI</div>
+            </div>
+
+            <!-- Map Tab Content -->
+            <div class="tab-content" id="map-content">
+                <div id="map-container">
+                    <div id="map"></div>
+                </div>
             </div>
             
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
@@ -356,6 +392,32 @@
         const pttHint = document.getElementById('ptt-hint');
         const disconnectBtn = document.getElementById('disconnect-btn');
         const status = document.getElementById('status');
+        
+        // Tab elementleri
+        const talkTab = document.getElementById('talk-tab');
+        const mapTab = document.getElementById('map-tab');
+        const talkContent = document.getElementById('talk-content');
+        const mapContent = document.getElementById('map-content');
+
+        // Tab geçişi
+        talkTab.addEventListener('click', () => {
+            talkTab.classList.add('active');
+            mapTab.classList.remove('active');
+            talkContent.classList.add('active');
+            mapContent.classList.remove('active');
+        });
+
+        mapTab.addEventListener('click', () => {
+            mapTab.classList.add('active');
+            talkTab.classList.remove('active');
+            mapContent.classList.add('active');
+            talkContent.classList.remove('active');
+            
+            // Harita sekmesine geçince haritayı yeniden boyutlandır
+            if (map) {
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+        });
 
         let wakeLock = null;
         async function requestWakeLock() {
