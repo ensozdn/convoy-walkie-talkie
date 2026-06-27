@@ -243,8 +243,8 @@
         // LiveKit'i global scope'a ekle
         const LivekitClient = window.LivekitClient || window.LiveKit || window;
         
-        // Backend URL
-        const BACKEND_URL = 'http://192.168.1.177:3000';
+        // Backend URL - Vercel'de aynı domain
+        const BACKEND_URL = window.location.origin;
         
         let room = null;
         let isSpeaking = false;
