@@ -379,6 +379,10 @@
         let locationInterval = null;
         const LOCATION_UPDATE_INTERVAL = 5000; // 5 saniye
         
+        // Rota çizgisi (polyline) için
+        let leaderRoute = null; // Liderin rota çizgisi
+        let leaderRoutePoints = []; // Liderin GPS noktaları
+        
         // Farklı renkler için marker ikonları
         const markerColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
         let colorIndex = 0;
@@ -887,6 +891,8 @@
                     // Lider bilgisini kontrol et
                     if (data.isLeader) {
                         leaderParticipantId = data.participantId;
+                        // Liderin rotasını güncelle
+                        updateLeaderRoute(data.latitude, data.longitude);
                     }
                     
                     updateParticipantMarker(
@@ -900,6 +906,26 @@
                 }
             } catch (error) {
                 console.error('Konum verisi parse edilemedi:', error);
+            }
+        }
+
+        function updateLeaderRoute(lat, lng) {
+            if (!map) return;
+            
+            // Yeni noktayı ekle
+            leaderRoutePoints.push([lat, lng]);
+            
+            // Polyline yoksa oluştur
+            if (!leaderRoute) {
+                leaderRoute = L.polyline(leaderRoutePoints, {
+                    color: '#fbbf24', // Altın sarısı (lider rengi)
+                    weight: 4,
+                    opacity: 0.7,
+                    smoothFactor: 1
+                }).addTo(map);
+            } else {
+                // Varsa güncelle
+                leaderRoute.setLatLngs(leaderRoutePoints);
             }
         }
 
