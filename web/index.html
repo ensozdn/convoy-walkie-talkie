@@ -394,8 +394,19 @@
                     dynacast: true,
                 });
 
-                room.on('participantConnected', updateParticipants);
-                room.on('participantDisconnected', updateParticipants);
+                room.on('participantConnected', (participant) => {
+                    updateParticipants();
+                    console.log('Katılımcı bağlandı:', participant.identity);
+                });
+                room.on('participantDisconnected', (participant) => {
+                    updateParticipants();
+                    // Haritadan marker'ı kaldır
+                    if (markers.has(participant.sid)) {
+                        map.removeLayer(markers.get(participant.sid));
+                        markers.delete(participant.sid);
+                    }
+                    console.log('Katılımcı ayrıldı:', participant.identity);
+                });
                 room.on('trackSubscribed', handleTrackSubscribed);
                 room.on('trackUnsubscribed', handleTrackUnsubscribed);
                 room.on('activeSpeakersChanged', updateSpeakers);
@@ -462,9 +473,10 @@
         }
 
         function updateParticipants() {
-            if (!room || !room.participants) return;
-            const count = room.participants.size + 1;
+            if (!room || !room.remoteParticipants) return;
+            const count = room.remoteParticipants.size + 1; // +1 kendin için
             participantCount.textContent = count;
+            console.log('Katılımcı sayısı güncellendi:', count);
         }
 
         function updateSpeakers(speakers) {
