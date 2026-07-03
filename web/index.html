@@ -998,17 +998,18 @@
                 const marker = markers.get(myId);
                 marker.setLatLng([lat, lng]);
                 
-                // İkonu hız ile yeniden oluştur (mesafe yok - kendisi)
+                // İkonu hız ile yeniden oluştur (mesafe yok - kendisi, lider bilgisi ekle)
                 const color = getParticipantColor(myId);
-                marker.setIcon(createCustomIcon(color, myName, speed, null));
+                marker.setIcon(createCustomIcon(color, myName, speed, null, isLeader));
             } else {
                 const color = getParticipantColor(myId);
                 const marker = L.marker([lat, lng], {
-                    icon: createCustomIcon(color, myName, speed, null)
+                    icon: createCustomIcon(color, myName, speed, null, isLeader)
                 }).addTo(map);
                 
                 const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
-                marker.bindPopup(`<b>${myName}</b><br>Siz burdasınız${speedText}`);
+                const leaderText = isLeader ? '<br>KONVOY LİDERİ' : '';
+                marker.bindPopup(`<b>${myName}</b><br>Siz burdasınız${speedText}${leaderText}`);
                 markers.set(myId, marker);
                 
                 // Haritayı kendi konumuna ortala
