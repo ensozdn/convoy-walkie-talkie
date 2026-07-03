@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,10 +9,10 @@
     <meta name="theme-color" content="#f0f4f8">
     <title>🚗 Konvoy Telsiz</title>
     <link rel="manifest" href="manifest.json">
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+
     <style>
         * {
             margin: 0;
@@ -186,8 +187,15 @@
         }
 
         @keyframes bannerPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
         }
 
         /* GPS durumu uyarısı */
@@ -285,8 +293,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.75; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.75;
+            }
         }
 
         #status {
@@ -399,12 +414,14 @@
                 width: 220px;
                 height: 220px;
             }
+
             .ptt-emoji {
                 font-size: 72px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div id="login-screen" class="screen">
@@ -413,17 +430,18 @@
                 <p>Araç içi iletişim sistemi</p>
             </div>
             <input type="text" id="name-input" placeholder="İsminiz (örn: Sürücü 1)" autocomplete="off">
-            
+
             <div class="leader-checkbox">
                 <label>
                     <input type="checkbox" id="leader-checkbox">
                     <span>Konvoy Lideri</span>
                 </label>
             </div>
-            
+
             <button class="btn" id="join-btn">Konvoya Katıl</button>
             <div class="loading" id="loading">Bağlanıyor...</div>
-            <div id="login-status" style="display:none; margin-top:10px; text-align:center; color:#ef4444; font-weight:700;"></div>
+            <div id="login-status"
+                style="display:none; margin-top:10px; text-align:center; color:#ef4444; font-weight:700;"></div>
         </div>
 
         <div id="room-screen" class="screen">
@@ -447,7 +465,8 @@
             </div>
 
             <div class="ptt-button" id="ptt-btn">
-                <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="ptt-icon" id="ptt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                     <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -465,7 +484,8 @@
                 </div>
                 <div id="map"></div>
                 <button class="map-fit-btn" id="map-fit-btn" title="Herkesi göster">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
                         <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
                         <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
@@ -473,7 +493,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
         </div>
     </div>
@@ -483,14 +503,14 @@
     <script>
         const LivekitClient = window.LivekitClient || window.LiveKit || window;
         const BACKEND_URL = window.location.origin;
-        
+
         let room = null;
         let isSpeaking = false;
         let localAudioTrack = null;
         let participants = new Map();
         let isLeader = false; // Konvoy lideri mi?
         let leaderParticipantId = null; // Lider kim?
-        
+
         // Harita değişkenleri
         let map = null;
         let markers = new Map();
@@ -498,13 +518,13 @@
         let myLocation = null;
         let locationInterval = null;
         const LOCATION_UPDATE_INTERVAL = 5000; // 5 saniye
-        
+
         // Rota çizgisi (polyline) için
         let leaderRoute = null; // Liderin rota çizgisi
         let leaderRoutePoints = []; // Liderin GPS noktaları
         let allRoutes = new Map(); // Herkesin rotası: {participantId: {polyline, points: []}}
         let showAllRoutes = false; // Tüm rotaları göster/gizle
-        
+
         // Farklı renkler için marker ikonları
         const markerColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
         let colorIndex = 0;
@@ -529,38 +549,38 @@
         const status = document.getElementById('status');
         const connectionBanner = document.getElementById('connection-banner');
         const gpsBanner = document.getElementById('gps-banner');
-        
+
         // Konuşma kilidi için
         let someoneIsSpeaking = false;
-        
+
         // Ses uyarısı için Audio Context
         let audioContext = null;
         let notificationSound = null;
-        
+
         // Bildirim sesi oluştur (basit beep)
         function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
         }
-        
+
         function playNotificationSound() {
             try {
                 initAudio();
-                
+
                 // Basit beep sesi oluştur
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-                
+
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-                
+
                 oscillator.frequency.value = 800; // 800 Hz beep
                 oscillator.type = 'sine';
-                
+
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                
+
                 oscillator.start(audioContext.currentTime);
                 oscillator.stop(audioContext.currentTime + 0.2);
             } catch (error) {
@@ -648,14 +668,14 @@
 
             joinBtn.disabled = true;
             loading.style.display = 'block';
-            
+
             // Audio context'i başlat (user interaction gerekli)
             initAudio();
 
             try {
                 const response = await fetch(`${BACKEND_URL}/token?participantName=${encodeURIComponent(name)}`);
                 const data = await response.json();
-                
+
                 room = new LivekitClient.Room({
                     adaptiveStream: true,
                     dynacast: true,
@@ -694,7 +714,7 @@
                 });
 
                 await room.connect(data.wsUrl, data.token);
-                
+
                 localAudioTrack = await LivekitClient.createLocalAudioTrack();
                 await room.localParticipant.publishTrack(localAudioTrack, { name: 'microphone' });
                 localAudioTrack.mute();
@@ -703,14 +723,14 @@
                 loginScreen.style.display = 'none';
                 roomScreen.style.display = 'block';
                 updateParticipants();
-                
+
                 await requestWakeLock();
                 initMap();
                 startLocationSharing();
-                
+
                 // Rota toggle butonu
                 routeToggleBtn.addEventListener('click', toggleAllRoutes);
-                
+
                 // Room ekranı açıldıktan sonra status güncelle
                 setTimeout(() => {
                     setConnectionStatus('connected');
@@ -741,12 +761,12 @@
                 alert('Birisi konuşuyor, lütfen bekleyin');
                 return;
             }
-            
+
             if (!localAudioTrack || isSpeaking) return;
             isSpeaking = true;
             someoneIsSpeaking = true;
             await localAudioTrack.unmute();
-            
+
             pttBtn.classList.add('active');
             pttBtn.style.opacity = '1';
             pttIcon.setAttribute('stroke', '#ffffff');
@@ -760,7 +780,7 @@
             isSpeaking = false;
             someoneIsSpeaking = false;
             await localAudioTrack.mute();
-            
+
             pttBtn.classList.remove('active');
             pttBtn.style.opacity = '1';
             pttIcon.setAttribute('stroke', '#ffffff');
@@ -778,14 +798,14 @@
 
         function updateSpeakers(speakers) {
             speakersDiv.innerHTML = '';
-            
+
             const activeSpeakers = speakers.filter(p => !p.isLocal && p.isSpeaking);
-            
+
             // Birisi yeni konuşmaya başladıysa ses çal
             if (activeSpeakers.length > 0 && !someoneIsSpeaking) {
                 playNotificationSound();
             }
-            
+
             // Hard Lock: Birisi konuşuyorsa butonu kilitle
             if (activeSpeakers.length > 0) {
                 someoneIsSpeaking = true;
@@ -796,7 +816,7 @@
                 pttBtn.style.opacity = '1';
                 pttBtn.style.pointerEvents = 'auto';
             }
-            
+
             if (activeSpeakers.length === 0) {
                 speakersDiv.innerHTML = '<div class="no-speaker">Kimse konuşmuyor</div>';
                 return;
@@ -844,13 +864,13 @@
         // Harita fonksiyonları
         function initMap() {
             map = L.map('map').setView([39.9334, 32.8597], 13); // Ankara merkez başlangıç
-            
+
             // Uydu görüntüsü katmanı (Apple Maps gibi)
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: 'Esri',
                 maxZoom: 19
             }).addTo(map);
-            
+
             // Yol isimleri ve etiketler overlay
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
                 attribution: '© CARTO',
@@ -873,10 +893,10 @@
             const R = 6371; // Dünya yarıçapı (km)
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return R * c; // km
         }
 
@@ -906,7 +926,7 @@
                 border: 3px solid white;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             ">⭐</div>` : '';
-            
+
             const speedText = speed !== null && speed > 0 ? `<div style="
                 position: absolute;
                 top: -25px;
@@ -920,7 +940,7 @@
                 font-weight: 900;
                 white-space: nowrap;
             ">${Math.round(speed)} km/h</div>` : '';
-            
+
             const distanceText = distance !== null ? `<div style="
                 position: absolute;
                 bottom: -25px;
@@ -934,7 +954,7 @@
                 font-weight: 900;
                 white-space: nowrap;
             ">${distance}</div>` : '';
-            
+
             return L.divIcon({
                 className: 'custom-marker',
                 html: `
@@ -1043,12 +1063,12 @@
 
             const myId = room?.localParticipant?.sid || 'me';
             const myName = room?.localParticipant?.name || 'Ben';
-            
+
             if (markers.has(myId)) {
                 // Marker'ı güncelle (konum + hız)
                 const marker = markers.get(myId);
                 marker.setLatLng([lat, lng]);
-                
+
                 // İkonu hız ile yeniden oluştur (mesafe yok - kendisi, lider bilgisi ekle)
                 const color = getParticipantColor(myId);
                 marker.setIcon(createCustomIcon(color, myName, speed, null, isLeader));
@@ -1057,35 +1077,35 @@
                 const marker = L.marker([lat, lng], {
                     icon: createCustomIcon(color, myName, speed, null, isLeader)
                 }).addTo(map);
-                
+
                 const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
                 const leaderText = isLeader ? '<br>KONVOY LİDERİ' : '';
                 marker.bindPopup(`<b>${myName}</b><br>Siz burdasınız${speedText}${leaderText}`);
                 markers.set(myId, marker);
-                
+
                 // Haritayı kendi konumuna ortala
                 map.setView([lat, lng], 14);
             }
-            
+
             // Diğer katılımcıların mesafelerini güncelle
             updateAllDistances();
         }
-        
+
         function updateAllDistances() {
             if (!myLocation || !map) return;
-            
+
             // Her katılımcı için mesafeyi hesapla ve güncelle
             participantData.forEach((data, participantId) => {
                 const myId = room?.localParticipant?.sid || 'me';
                 if (participantId === myId) return; // Kendini atla
-                
+
                 const distance = calculateDistance(
                     myLocation.latitude,
                     myLocation.longitude,
                     data.lat,
                     data.lng
                 );
-                
+
                 // Marker'ı mesafe ile güncelle
                 if (markers.has(participantId)) {
                     const marker = markers.get(participantId);
@@ -1099,10 +1119,10 @@
         function handleLocationData(payload, participant) {
             const decoder = new TextDecoder();
             const text = decoder.decode(payload);
-            
+
             try {
                 const data = JSON.parse(text);
-                
+
                 if (data.type === 'location') {
                     // Lider bilgisini kontrol et
                     if (data.isLeader) {
@@ -1110,10 +1130,10 @@
                         // Liderin rotasını güncelle
                         updateLeaderRoute(data.latitude, data.longitude);
                     }
-                    
+
                     // Herkesin rotasını kaydet (arka planda)
                     updateParticipantRoute(data.participantId, data.latitude, data.longitude);
-                    
+
                     updateParticipantMarker(
                         data.participantId,
                         data.participantName,
@@ -1130,10 +1150,10 @@
 
         function updateLeaderRoute(lat, lng) {
             if (!map) return;
-            
+
             // Yeni noktayı ekle
             leaderRoutePoints.push([lat, lng]);
-            
+
             // Polyline yoksa oluştur
             if (!leaderRoute) {
                 leaderRoute = L.polyline(leaderRoutePoints, {
@@ -1150,7 +1170,7 @@
 
         function updateParticipantRoute(participantId, lat, lng) {
             if (!map) return;
-            
+
             // Katılımcının rotasını al veya oluştur
             if (!allRoutes.has(participantId)) {
                 allRoutes.set(participantId, {
@@ -1158,14 +1178,14 @@
                     points: []
                 });
             }
-            
+
             const route = allRoutes.get(participantId);
             route.points.push([lat, lng]);
-            
+
             // Eğer "Tüm Rotalar" açıksa polyline'ı göster
             if (showAllRoutes) {
                 const color = getParticipantColor(participantId);
-                
+
                 if (!route.polyline) {
                     route.polyline = L.polyline(route.points, {
                         color: color,
@@ -1181,12 +1201,12 @@
 
         function toggleAllRoutes() {
             showAllRoutes = !showAllRoutes;
-            
+
             if (showAllRoutes) {
                 // Butonu aktif yap
                 routeToggleBtn.classList.add('active');
                 routeToggleBtn.textContent = 'Rotaları Gizle';
-                
+
                 // Tüm rotaları göster
                 allRoutes.forEach((route, participantId) => {
                     if (route.points.length > 0 && !route.polyline) {
@@ -1203,7 +1223,7 @@
                 // Butonu pasif yap
                 routeToggleBtn.classList.remove('active');
                 routeToggleBtn.textContent = 'Tüm Rotalar';
-                
+
                 // Tüm rotaları gizle
                 allRoutes.forEach((route) => {
                     if (route.polyline) {
@@ -1242,7 +1262,7 @@
                 // Marker'ı güncelle (konum + hız + mesafe + lider)
                 const marker = markers.get(participantId);
                 marker.setLatLng([lat, lng]);
-                
+
                 // İkonu lider bilgisi ile yeniden oluştur
                 const color = getParticipantColor(participantId);
                 marker.setIcon(createCustomIcon(color, participantName, speed, distance, isLeaderMarker));
@@ -1251,7 +1271,7 @@
                 const marker = L.marker([lat, lng], {
                     icon: createCustomIcon(color, participantName, speed, distance, isLeaderMarker)
                 }).addTo(map);
-                
+
                 const speedText = speed !== null && speed > 0 ? `<br>Hız: ${Math.round(speed)} km/h` : '';
                 const distanceText = distance ? `<br>Mesafe: ${distance}` : '';
                 const leaderText = isLeaderMarker ? '<br>🏆 KONVOY LİDERİ' : '';
@@ -1261,4 +1281,5 @@
         }
     </script>
 </body>
+
 </html>
