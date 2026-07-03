@@ -164,6 +164,48 @@
             font-weight: 400;
         }
 
+        /* Konvoy üyeleri paneli (kimler bağlı) */
+        .participants-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .participant-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 12px;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .participant-chip.speaking {
+            background: #dcfce7;
+            border-color: #16a34a;
+            color: #166534;
+        }
+
+        .participant-chip .chip-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .participant-chip .chip-leader {
+            color: #d97706;
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
         /* Bağlantı durumu uyarı banner'ı */
         .connection-banner {
             display: none;
@@ -454,6 +496,9 @@
                 <span class="status-badge" id="status">BAĞLI</span>
             </div>
 
+            <!-- Konvoy üyeleri paneli (kimler bağlı) -->
+            <div class="participants-panel" id="participants-panel"></div>
+
             <!-- Bağlantı durumu uyarısı (sadece sorun olunca görünür) -->
             <div class="connection-banner" id="connection-banner"></div>
 
@@ -549,6 +594,7 @@
         const status = document.getElementById('status');
         const connectionBanner = document.getElementById('connection-banner');
         const gpsBanner = document.getElementById('gps-banner');
+        const participantsPanel = document.getElementById('participants-panel');
 
         // Konuşma kilidi için
         let someoneIsSpeaking = false;
@@ -794,12 +840,51 @@
             const count = room.remoteParticipants.size + 1; // +1 kendin için
             participantCount.textContent = count;
             console.log('Katılımcı sayısı güncellendi:', count);
+            updateParticipantsPanel();
+        }
+
+        // Şu an konuşanların id'leri (chip vurgusu için)
+        let speakingIds = new Set();
+
+        function updateParticipantsPanel() {
+            if (!room || !room.localParticipant || !participantsPanel) return;
+            participantsPanel.innerHTML = '';
+
+            // Önce kendim
+            const myId = room.localParticipant.sid;
+            const myName = room.localParticipant.name || room.localParticipant.identity || 'Ben';
+            addParticipantChip(myId, myName + ' (siz)', isLeader);
+
+            // Sonra diğer katılımcılar
+            room.remoteParticipants.forEach((participant) => {
+                const pid = participant.sid;
+                const pname = participant.name || participant.identity || 'Sürücü';
+                const pIsLeader = (pid === leaderParticipantId) || (participantData.get(pid)?.isLeader === true);
+                addParticipantChip(pid, pname, pIsLeader);
+            });
+        }
+
+        function addParticipantChip(id, name, leader) {
+            const color = participantColors.get(id) || '#94a3b8';
+            const isSpeaking = speakingIds.has(id);
+            const chip = document.createElement('div');
+            chip.className = 'participant-chip' + (isSpeaking ? ' speaking' : '');
+            chip.innerHTML = `
+                <span class="chip-dot" style="background:${color}"></span>
+                <span>${name}</span>
+                ${leader ? '<span class="chip-leader">LİDER</span>' : ''}
+            `;
+            participantsPanel.appendChild(chip);
         }
 
         function updateSpeakers(speakers) {
             speakersDiv.innerHTML = '';
 
             const activeSpeakers = speakers.filter(p => !p.isLocal && p.isSpeaking);
+
+            // Konuşanların id'lerini güncelle (kendim dahil) ve paneli tazele
+            speakingIds = new Set(speakers.filter(p => p.isSpeaking).map(p => p.sid));
+            updateParticipantsPanel();
 
             // Birisi yeni konuşmaya başladıysa ses çal
             if (activeSpeakers.length > 0 && !someoneIsSpeaking) {
@@ -1142,6 +1227,9 @@
                         data.speed,
                         data.isLeader
                     );
+
+                    // Panel'i tazele (renk + lider bilgisi güncellensin)
+                    updateParticipantsPanel();
                 }
             } catch (error) {
                 console.error('Konum verisi parse edilemedi:', error);
