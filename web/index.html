@@ -410,6 +410,44 @@
             color: #0284c7;
         }
 
+        /* Otomatik takip butonu (sağ üst) */
+        .map-follow-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 1001;
+            width: 46px;
+            height: 46px;
+            background: #fff;
+            border: 2px solid #0284c7;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+            transition: transform 0.15s;
+        }
+
+        .map-follow-btn:active {
+            transform: scale(0.92);
+        }
+
+        .map-follow-btn svg {
+            width: 26px;
+            height: 26px;
+            color: #0284c7;
+        }
+
+        .map-follow-btn.active {
+            background: #0284c7;
+            border-color: #0284c7;
+        }
+
+        .map-follow-btn.active svg {
+            color: #fff;
+        }
+
         /* Buluşma noktası butonu (sadece lider görür) */
         .map-meeting-btn {
             position: absolute;
@@ -600,6 +638,17 @@
                     <button class="route-toggle-btn" id="route-toggle-btn">Tüm Rotalar</button>
                 </div>
                 <div id="map"></div>
+                <button class="map-follow-btn" id="map-follow-btn" title="Otomatik takip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <line x1="2" y1="12" x2="5" y2="12"></line>
+                        <line x1="19" y1="12" x2="22" y2="12"></line>
+                        <line x1="12" y1="2" x2="12" y2="5"></line>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                        <circle cx="12" cy="12" r="7"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
                 <button class="map-fit-btn" id="map-fit-btn" title="Herkesi göster">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -656,6 +705,10 @@
         let meetingPointMarker = null;  // Leaflet marker
         let meetingMode = false;        // Lider "haritaya dokun" modunda mı?
 
+        // Otomatik takip modu (harita herkesi ekranda tutar)
+        let autoFollow = false;
+        let autoFollowTimer = null;
+
         // Farklı renkler için marker ikonları
         const markerColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
         let colorIndex = 0;
@@ -677,6 +730,7 @@
         const routeToggleBtn = document.getElementById('route-toggle-btn');
         const disconnectBtn = document.getElementById('disconnect-btn');
         const mapFitBtn = document.getElementById('map-fit-btn');
+        const mapFollowBtn = document.getElementById('map-follow-btn');
         const mapMeetingBtn = document.getElementById('map-meeting-btn');
         const meetingHint = document.getElementById('meeting-hint');
         const clearMeetingBtn = document.getElementById('clear-meeting-btn');
@@ -1055,6 +1109,11 @@
             // Lider haritaya dokununca buluşma noktası koyar
             map.on('click', onMapClickForMeeting);
 
+            // Kullanıcı haritayı elle sürüklerse otomatik takibi kapat
+            map.on('dragstart', () => {
+                if (autoFollow) setAutoFollow(false);
+            });
+
             // Lider ise buluşma noktası butonunu göster
             showLeaderMeetingControls();
         }
@@ -1067,6 +1126,22 @@
         }
 
         mapFitBtn.addEventListener('click', fitAllMarkers);
+
+        // ---- Otomatik Takip Modu (Madde 5) ----
+        function setAutoFollow(on) {
+            autoFollow = on;
+            mapFollowBtn.classList.toggle('active', on);
+            if (on) fitAllMarkers(); // açar açmaz hemen sığdır
+        }
+
+        // Konumlar güncellendikçe haritayı yeniden sığdır (debounce'lu, zıplamasın)
+        function maybeAutoFollow() {
+            if (!autoFollow) return;
+            if (autoFollowTimer) clearTimeout(autoFollowTimer);
+            autoFollowTimer = setTimeout(fitAllMarkers, 600);
+        }
+
+        mapFollowBtn.addEventListener('click', () => setAutoFollow(!autoFollow));
 
         // ---- Buluşma Noktası (Madde 6) ----
         function meetingPointIcon(distanceText) {
@@ -1365,6 +1440,9 @@
 
             // Diğer katılımcıların mesafelerini güncelle
             updateAllDistances();
+
+            // Otomatik takip açıksa haritayı yeniden sığdır
+            maybeAutoFollow();
         }
 
         function updateAllDistances() {
@@ -1574,6 +1652,9 @@
                 marker.bindPopup(`<b>${participantName}</b>${speedText}${distanceText}${leaderText}`);
                 markers.set(participantId, marker);
             }
+
+            // Otomatik takip açıksa haritayı yeniden sığdır
+            maybeAutoFollow();
         }
     </script>
 </body>
