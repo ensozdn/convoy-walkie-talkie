@@ -993,8 +993,11 @@
                     setGpsStatus('ok');
 
                     const { latitude, longitude, speed } = position.coords;
-                    // speed m/s cinsinden gelir, km/h'ye çevir
-                    const speedKmh = speed !== null ? speed * 3.6 : null;
+                    // speed m/s cinsinden gelir, km/h'ye çevir.
+                    // GPS bazen null, NaN veya negatif değer verebilir; geçersiz say.
+                    let speedKmh = (speed !== null && !isNaN(speed) && speed >= 0) ? speed * 3.6 : null;
+                    // GPS ara sıra saçma yüksek değer (ör. 900 km/h) verebilir; 300 üstünü yok say
+                    if (speedKmh !== null && speedKmh > 300) speedKmh = null;
                     myLocation = { latitude, longitude, speed: speedKmh };
 
                     // Kendi konumumu haritada güncelle
