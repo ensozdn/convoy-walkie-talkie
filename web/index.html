@@ -316,11 +316,41 @@
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 3px solid #0284c7;
+            position: relative;
         }
 
         #map {
             height: 350px;
             width: 100%;
+        }
+
+        /* Haritada "herkesi sığdır" yüzen butonu */
+        .map-fit-btn {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            z-index: 1001;
+            width: 46px;
+            height: 46px;
+            background: #fff;
+            border: 2px solid #0284c7;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+            transition: transform 0.15s;
+        }
+
+        .map-fit-btn:active {
+            transform: scale(0.92);
+        }
+
+        .map-fit-btn svg {
+            width: 26px;
+            height: 26px;
+            color: #0284c7;
         }
 
         .map-header {
@@ -434,6 +464,14 @@
                     <button class="route-toggle-btn" id="route-toggle-btn">Tüm Rotalar</button>
                 </div>
                 <div id="map"></div>
+                <button class="map-fit-btn" id="map-fit-btn" title="Herkesi göster">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                        <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
+                        <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                    </svg>
+                </button>
             </div>
             
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
@@ -487,6 +525,7 @@
         const pttHint = document.getElementById('ptt-hint');
         const routeToggleBtn = document.getElementById('route-toggle-btn');
         const disconnectBtn = document.getElementById('disconnect-btn');
+        const mapFitBtn = document.getElementById('map-fit-btn');
         const status = document.getElementById('status');
         const connectionBanner = document.getElementById('connection-banner');
         const gpsBanner = document.getElementById('gps-banner');
@@ -819,6 +858,15 @@
                 subdomains: 'abcd'
             }).addTo(map);
         }
+
+        // Tüm araçları haritaya sığdır (Google Maps recenter gibi)
+        function fitAllMarkers() {
+            if (!map || markers.size === 0) return;
+            const group = L.featureGroup(Array.from(markers.values()));
+            map.fitBounds(group.getBounds(), { padding: [60, 60], maxZoom: 16 });
+        }
+
+        mapFitBtn.addEventListener('click', fitAllMarkers);
 
         // Mesafe hesaplama (Haversine formülü - km cinsinden)
         function calculateDistance(lat1, lon1, lat2, lon2) {
