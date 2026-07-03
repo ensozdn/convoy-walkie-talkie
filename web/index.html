@@ -410,6 +410,78 @@
             color: #0284c7;
         }
 
+        /* Buluşma noktası butonu (sadece lider görür) */
+        .map-meeting-btn {
+            position: absolute;
+            bottom: 70px;
+            left: 14px;
+            z-index: 1001;
+            width: 46px;
+            height: 46px;
+            background: #fff;
+            border: 2px solid #7c3aed;
+            border-radius: 12px;
+            display: none;
+            /* lider olunca JS gösterir */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+            transition: transform 0.15s;
+        }
+
+        .map-meeting-btn:active {
+            transform: scale(0.92);
+        }
+
+        .map-meeting-btn svg {
+            width: 26px;
+            height: 26px;
+            color: #7c3aed;
+        }
+
+        .map-meeting-btn.active {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+
+        .map-meeting-btn.active svg {
+            color: #fff;
+        }
+
+        /* Buluşma noktası "haritaya dokun" ipucu */
+        .meeting-hint {
+            position: absolute;
+            top: 56px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background: rgba(22, 163, 74, 0.95);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        /* Buluşma noktasını temizle butonu (lider) */
+        .clear-meeting-btn {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            background: #fff;
+            border: 3px solid #7c3aed;
+            color: #6d28d9;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
         .map-header {
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             padding: 12px 16px;
@@ -537,7 +609,16 @@
                         <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
                     </svg>
                 </button>
+                <button class="map-meeting-btn" id="map-meeting-btn" title="Buluşma noktası koy">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5"></path>
+                    </svg>
+                </button>
+                <div class="meeting-hint" id="meeting-hint">Buluşma noktası için haritaya dokunun</div>
             </div>
+
+            <button class="clear-meeting-btn" id="clear-meeting-btn">Buluşma Noktasını Temizle</button>
 
             <button class="btn disconnect-btn" id="disconnect-btn">Konvoydan Ayrıl</button>
         </div>
@@ -570,6 +651,11 @@
         let allRoutes = new Map(); // Herkesin rotası: {participantId: {polyline, points: []}}
         let showAllRoutes = false; // Tüm rotaları göster/gizle
 
+        // Buluşma noktası (lider koyar, herkes görür)
+        let meetingPoint = null;        // { lat, lng }
+        let meetingPointMarker = null;  // Leaflet marker
+        let meetingMode = false;        // Lider "haritaya dokun" modunda mı?
+
         // Farklı renkler için marker ikonları
         const markerColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
         let colorIndex = 0;
@@ -591,6 +677,9 @@
         const routeToggleBtn = document.getElementById('route-toggle-btn');
         const disconnectBtn = document.getElementById('disconnect-btn');
         const mapFitBtn = document.getElementById('map-fit-btn');
+        const mapMeetingBtn = document.getElementById('map-meeting-btn');
+        const meetingHint = document.getElementById('meeting-hint');
+        const clearMeetingBtn = document.getElementById('clear-meeting-btn');
         const status = document.getElementById('status');
         const connectionBanner = document.getElementById('connection-banner');
         const gpsBanner = document.getElementById('gps-banner');
@@ -962,6 +1051,12 @@
                 maxZoom: 19,
                 subdomains: 'abcd'
             }).addTo(map);
+
+            // Lider haritaya dokununca buluşma noktası koyar
+            map.on('click', onMapClickForMeeting);
+
+            // Lider ise buluşma noktası butonunu göster
+            showLeaderMeetingControls();
         }
 
         // Tüm araçları haritaya sığdır (Google Maps recenter gibi)
@@ -972,6 +1067,97 @@
         }
 
         mapFitBtn.addEventListener('click', fitAllMarkers);
+
+        // ---- Buluşma Noktası (Madde 6) ----
+        function meetingPointIcon(distanceText) {
+            const label = distanceText ? `<div style="
+                position:absolute; bottom:-24px; left:50%; transform:translateX(-50%);
+                background:#7c3aed; color:#fff; padding:3px 8px; border-radius:8px;
+                font-size:11px; font-weight:900; white-space:nowrap;">${distanceText}</div>` : '';
+            return L.divIcon({
+                className: 'meeting-marker',
+                html: `<div style="position:relative;">
+                    <div style="width:40px; height:40px; background:linear-gradient(135deg,#8b5cf6,#6d28d9);
+                        border:4px solid #fff; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+                        box-shadow:0 4px 12px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center;">
+                        <span style="transform:rotate(45deg); color:#fff; font-weight:900; font-size:16px;">B</span>
+                    </div>${label}
+                </div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            });
+        }
+
+        function meetingDistanceText() {
+            if (!meetingPoint || !myLocation) return '';
+            const d = calculateDistance(myLocation.latitude, myLocation.longitude, meetingPoint.lat, meetingPoint.lng);
+            return 'Buluşma: ' + formatDistance(d);
+        }
+
+        function showMeetingPointMarker(lat, lng) {
+            meetingPoint = { lat, lng };
+            const icon = meetingPointIcon(meetingDistanceText());
+            if (meetingPointMarker) {
+                meetingPointMarker.setLatLng([lat, lng]);
+                meetingPointMarker.setIcon(icon);
+            } else {
+                meetingPointMarker = L.marker([lat, lng], { icon }).addTo(map);
+                meetingPointMarker.bindPopup('Buluşma Noktası');
+            }
+            // Sadece lider "Temizle" butonunu görür
+            if (isLeader) clearMeetingBtn.style.display = 'block';
+        }
+
+        function removeMeetingPointMarker() {
+            meetingPoint = null;
+            if (meetingPointMarker) {
+                map.removeLayer(meetingPointMarker);
+                meetingPointMarker = null;
+            }
+            clearMeetingBtn.style.display = 'none';
+        }
+
+        function refreshMeetingPointDistance() {
+            if (meetingPoint && meetingPointMarker && myLocation) {
+                meetingPointMarker.setIcon(meetingPointIcon(meetingDistanceText()));
+            }
+        }
+
+        // Buluşma noktasını diğerlerine anlık gönder
+        function broadcastMeetingPoint() {
+            if (!room || !room.localParticipant) return;
+            const msg = { type: 'meetingpoint', meetingPoint: meetingPoint };
+            const bytes = new TextEncoder().encode(JSON.stringify(msg));
+            room.localParticipant.publishData(bytes, { reliable: true });
+        }
+
+        // Lider: buluşma butonu -> "haritaya dokun" modunu aç/kapat
+        mapMeetingBtn.addEventListener('click', () => {
+            meetingMode = !meetingMode;
+            mapMeetingBtn.classList.toggle('active', meetingMode);
+            meetingHint.style.display = meetingMode ? 'block' : 'none';
+        });
+
+        // Lider: haritaya dokununca noktayı koy ve yayınla
+        function onMapClickForMeeting(e) {
+            if (!meetingMode) return;
+            showMeetingPointMarker(e.latlng.lat, e.latlng.lng);
+            broadcastMeetingPoint();
+            meetingMode = false;
+            mapMeetingBtn.classList.remove('active');
+            meetingHint.style.display = 'none';
+        }
+
+        // Lider: buluşma noktasını temizle
+        clearMeetingBtn.addEventListener('click', () => {
+            removeMeetingPointMarker();
+            broadcastMeetingPoint(); // meetingPoint = null -> herkes temizler
+        });
+
+        // Lider kontrollerini göster (join sonrası çağrılır)
+        function showLeaderMeetingControls() {
+            if (isLeader) mapMeetingBtn.style.display = 'flex';
+        }
 
         // Mesafe hesaplama (Haversine formülü - km cinsinden)
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1108,6 +1294,9 @@
                     // Kendi konumumu haritada güncelle
                     updateMyMarker(latitude, longitude, speedKmh);
 
+                    // Buluşma noktası mesafemi tazele (hareket ettikçe)
+                    refreshMeetingPointDistance();
+
                     // Konumu ve hızı diğer katılımcılara gönder
                     if (room && room.localParticipant) {
                         const locationData = {
@@ -1118,6 +1307,8 @@
                             longitude,
                             speed: speedKmh,
                             isLeader: isLeader, // Lider bilgisi ekle
+                            // Lider ise buluşma noktasını da iliştir (geç katılanlar görsün)
+                            meetingPoint: isLeader ? meetingPoint : undefined,
                             timestamp: Date.now()
                         };
 
@@ -1208,12 +1399,29 @@
             try {
                 const data = JSON.parse(text);
 
+                // Buluşma noktası anlık mesajı (liderden)
+                if (data.type === 'meetingpoint') {
+                    if (data.meetingPoint) {
+                        showMeetingPointMarker(data.meetingPoint.lat, data.meetingPoint.lng);
+                    } else {
+                        removeMeetingPointMarker();
+                    }
+                    return;
+                }
+
                 if (data.type === 'location') {
                     // Lider bilgisini kontrol et
                     if (data.isLeader) {
                         leaderParticipantId = data.participantId;
                         // Liderin rotasını güncelle
                         updateLeaderRoute(data.latitude, data.longitude);
+
+                        // Buluşma noktasını liderden senkronla (geç katılan/yeniden bağlanan için)
+                        if (data.meetingPoint) {
+                            showMeetingPointMarker(data.meetingPoint.lat, data.meetingPoint.lng);
+                        } else if (meetingPoint) {
+                            removeMeetingPointMarker();
+                        }
                     }
 
                     // Herkesin rotasını kaydet (arka planda)
