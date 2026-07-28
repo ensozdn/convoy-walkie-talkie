@@ -13,9 +13,17 @@ interface ParticipantData {
   };
 }
 
+interface AudioClip {
+  id: number;
+  sender: string;
+  audioBase64: string;
+  timestamp: number;
+}
+
 // In-memory oda yönetimi
 const roomParticipants = new Map<string, Map<string, ParticipantData>>();
 const roomSpeakers = new Map<string, string | null>(); // roomName -> participantName or null
+const roomAudioStore = new Map<string, AudioClip[]>(); // roomName -> AudioClip[]
 
 @Controller()
 export class TokenController {
@@ -140,5 +148,53 @@ export class TokenController {
       roomSpeakers.set(roomName, null);
     }
     return { success: true };
+  }
+
+  // --- EXPO AV TELSİZ SES UPLOAD & GET ENDPOINTS ---
+  @Post("audio/upload")
+  uploadAudio(
+    @Body() body: { roomName: string; sender: string; audioBase64: string },
+  ) {
+    const { roomName, sender, audioBase64 } = body;
+    if (!roomName || !sender || !audioBase64) return { success: false };
+
+    if (!roomAudioStore.has(roomName)) {
+      roomAudioStore.set(roomName, []);
+    }
+    const clips = roomAudioStore.get(roomName)!;
+    const newClip: AudioClip = {
+      id: Date.now(),
+      sender,
+      audioBase64,
+      timestamp: Date.now(),
+    };
+    clips.push(newClip);
+
+    // Maksimum 10 klip sakla
+    if (clips.length > 10) {
+      clips.shift();
+    }
+
+    return { success: true, audioId: newClip.id };
+  }
+
+  @Get("audio/latest")
+  getLatestAudio(
+    @Query("roomName") roomName: string,
+    @Query("lastAudioId") lastAudioId: string,
+    @Query("senderName") senderName: string,
+  ) {
+    if (!roomName) return { clip: null };
+
+    const clips = roomAudioStore.get(roomName) || [];
+    const lastId = Number(lastAudioId) || 0;
+
+    // Kendisinden gelmeyen ve lastId'den büyük ilk klibi bul
+    const newClip = clips.find((c) => c.id > lastId && c.sender !== senderName);
+
+    if (newClip) {
+      return { clip: newClip };
+    }
+    return { clip: null };
   }
 }
