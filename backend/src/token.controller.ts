@@ -156,7 +156,11 @@ export class TokenController {
     @Body() body: { roomName: string; sender: string; audioBase64: string },
   ) {
     const { roomName, sender, audioBase64 } = body;
-    if (!roomName || !sender || !audioBase64) return { success: false };
+    console.log(`[UPLOAD] roomName="${roomName}" sender="${sender}" audioBase64 length=${audioBase64?.length ?? 0}`);
+    if (!roomName || !sender || !audioBase64) {
+      console.log('[UPLOAD] REJECTED - missing fields!');
+      return { success: false };
+    }
 
     if (!roomAudioStore.has(roomName)) {
       roomAudioStore.set(roomName, []);
@@ -174,7 +178,7 @@ export class TokenController {
     if (clips.length > 10) {
       clips.shift();
     }
-
+    console.log(`[UPLOAD] SAVED! roomName="${roomName}" audioId=${newClip.id} totalClips=${clips.length}`);
     return { success: true, audioId: newClip.id };
   }
 
