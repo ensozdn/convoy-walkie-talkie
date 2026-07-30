@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const token_controller_1 = require("./token.controller");
+const events_gateway_1 = require("./events.gateway");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -16,7 +17,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [],
         controllers: [token_controller_1.TokenController],
-        providers: [],
+        providers: [events_gateway_1.EventsGateway],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

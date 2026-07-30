@@ -1,7 +1,7 @@
 {
   "name": "convoy-backend",
   "version": "1.0.0",
-  "description": "LiveKit Token Generator for Convoy Walkie-Talkie",
+  "description": "Konvoy Telsiz High-Performance WebSocket Backend",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
@@ -10,8 +10,8 @@
     "start:dev": "ts-node src/main.ts"
   },
   "keywords": [
-    "livekit",
     "nestjs",
+    "socket.io",
     "walkie-talkie"
   ],
   "author": "",
@@ -20,8 +20,10 @@
     "@nestjs/common": "^11.1.27",
     "@nestjs/core": "^11.1.27",
     "@nestjs/platform-express": "^11.1.27",
+    "@nestjs/platform-socket.io": "^11.1.27",
+    "@nestjs/websockets": "^11.1.27",
     "dotenv": "^17.4.2",
-    "livekit-server-sdk": "^2.15.5",
+    "socket.io": "^4.8.1",
     "typescript": "^6.0.3",
     "@types/node": "^26.0.1"
   },

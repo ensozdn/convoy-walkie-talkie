@@ -38,13 +38,17 @@ const app_module_1 = require("./app.module");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 async function bootstrap() {
-    const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.enableCors({
-        origin: "*",
-        methods: "GET,POST",
+    const app = await core_1.NestFactory.create(app_module_1.AppModule, {
+        bodyParser: true,
     });
+    app.enableCors({
+        origin: '*',
+        methods: 'GET,POST',
+    });
+    app.use(require('express').json({ limit: '10mb' }));
+    app.use(require('express').urlencoded({ limit: '10mb', extended: true }));
     await app.listen(3000);
-    console.log("🚗 Konvoy Telsiz Backend çalışıyor: http://localhost:3000");
+    console.log('Konvoy Telsiz Backend calisiyor: http://localhost:3000');
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

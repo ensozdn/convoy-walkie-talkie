@@ -1,5 +1,4 @@
 import { Controller, Get, Post, Body, Query, BadRequestException } from "@nestjs/common";
-import { AccessToken } from "livekit-server-sdk";
 
 interface ParticipantData {
   id: string;
@@ -36,24 +35,7 @@ export class TokenController {
       throw new BadRequestException("participantName parametresi gerekli");
     }
 
-    const apiKey = process.env.LIVEKIT_API_KEY || "devkey";
-    const apiSecret = process.env.LIVEKIT_API_SECRET || "secret";
-    const wsUrl = process.env.LIVEKIT_WS_URL || "ws://localhost:7880";
     const targetRoom = roomName || "konvoy-gizli-oda";
-
-    const at = new AccessToken(apiKey, apiSecret, {
-      identity: participantName,
-      name: participantName,
-    });
-
-    at.addGrant({
-      roomJoin: true,
-      room: targetRoom,
-      canPublish: true,
-      canSubscribe: true,
-    });
-
-    const token = await at.toJwt();
 
     // Odaya katılımcıyı ekle/güncelle
     if (!roomParticipants.has(targetRoom)) {
@@ -69,8 +51,8 @@ export class TokenController {
     });
 
     return {
-      token,
-      wsUrl,
+      token: `ws-token-${Date.now()}-${participantName}`,
+      url: `http://localhost:3000`,
       roomName: targetRoom,
       participantName,
     };
