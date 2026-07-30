@@ -20,7 +20,8 @@ async function bootstrap() {
   app.use(require('express').json({ limit: '10mb' }));
   app.use(require('express').urlencoded({ limit: '10mb', extended: true }));
 
-  await app.listen(3000);
-  console.log('Konvoy Telsiz Backend calisiyor: http://localhost:3000');
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Konvoy Telsiz Backend calisiyor: port ${port}`);
 }
 bootstrap();
