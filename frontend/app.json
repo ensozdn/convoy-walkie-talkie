@@ -50,7 +50,8 @@
           "locationAlwaysAndWhenInUsePermission": "Uygulama arka plandayken konvoy üyelerine güncel konumunuzu iletmek için arka plan konum izni gereklidir.",
           "isAndroidBackgroundLocationEnabled": true
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "extra": {
       "eas": {

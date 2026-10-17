@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+  RecordingPresets,
+  AudioModule,
+} from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 
 /**
- * Telsiz ses motoru: bas-konuş kaydı, gelen sesi çalma, roger beep.
+ * Telsiz ses motoru: bas-konuş kaydı, gelen sesi çalma, roger beep (Expo SDK 57 - expo-audio).
  */
 export function usePTT({
   socketRef,
@@ -25,28 +31,48 @@ export function usePTT({
   useEffect(() => {
     (async () => {
       try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          allowsRecordingIOS: false,
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          allowsRecording: false,
         });
-        const { sound: on } = await Audio.Sound.createAsync(
-          require('../../assets/beep-on.wav')
-        );
-        const { sound: off } = await Audio.Sound.createAsync(
-          require('../../assets/beep-off.wav')
-        );
-        beepOnRef.current = on;
-        beepOffRef.current = off;
+
+        const onPlayer = createAudioPlayer(require('../../assets/beep-on.wav'));
+        const offPlayer = createAudioPlayer(require('../../assets/beep-off.wav'));
+
+        // Geriye dönük uyumluluk (SettingsTab replayAsync çağırır)
+        onPlayer.replayAsync = async () => {
+          try {
+            onPlayer.seekTo(0);
+            onPlayer.play();
+          } catch (e) {}
+        };
+        onPlayer.unloadAsync = async () => {
+          try { onPlayer.remove(); } catch (e) {}
+        };
+
+        offPlayer.replayAsync = async () => {
+          try {
+            offPlayer.seekTo(0);
+            offPlayer.play();
+          } catch (e) {}
+        };
+        offPlayer.unloadAsync = async () => {
+          try { offPlayer.remove(); } catch (e) {}
+        };
+
+        beepOnRef.current = onPlayer;
+        beepOffRef.current = offPlayer;
       } catch (e) {
-        console.log('Ses yüklenemedi:', e.message);
+        console.log('[PTT INIT] Ses yüklenemedi:', e.message);
       }
     })();
+
     return () => {
-      beepOnRef.current?.unloadAsync();
-      beepOffRef.current?.unloadAsync();
-      incomingSoundRef.current?.unloadAsync();
+      try { beepOnRef.current?.remove(); } catch (e) {}
+      try { beepOffRef.current?.remove(); } catch (e) {}
+      try { incomingSoundRef.current?.remove(); } catch (e) {}
       if (recordingRef.current) {
-        try { recordingRef.current.stopAndUnloadAsync(); } catch (e) {}
+        try { recordingRef.current.stop(); } catch (e) {}
       }
     };
   }, []);
@@ -66,29 +92,30 @@ export function usePTT({
         encoding: 'base64',
       });
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
       });
 
       if (incomingSoundRef.current) {
-        try { await incomingSoundRef.current.unloadAsync(); } catch (e) {}
+        try { incomingSoundRef.current.remove(); } catch (e) {}
+        incomingSoundRef.current = null;
       }
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: fileUri },
-        { shouldPlay: true, volume: 1.0 },
-        (playbackStatus) => {
-          if (playbackStatus.didJustFinish) {
-            if (rogerBeepRef.current) {
-              try { beepOffRef.current?.replayAsync(); } catch (e) {}
-            }
+      const player = createAudioPlayer(fileUri);
+      player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
+          if (rogerBeepRef.current && beepOffRef.current) {
+            try {
+              beepOffRef.current.seekTo(0);
+              beepOffRef.current.play();
+            } catch (e) {}
           }
         }
-      );
-      incomingSoundRef.current = sound;
+      });
+
+      player.play();
+      incomingSoundRef.current = player;
     } catch (e) {
       console.error('[WS AUDIO PLAYBACK ERROR]:', e.message);
     }
@@ -97,7 +124,11 @@ export function usePTT({
   // Çalan sesi anında durdur (kullanıcı engellenince)
   const stopIncoming = async () => {
     if (incomingSoundRef.current) {
-      try { await incomingSoundRef.current.stopAsync(); } catch (e) {}
+      try {
+        incomingSoundRef.current.pause();
+        incomingSoundRef.current.remove();
+        incomingSoundRef.current = null;
+      } catch (e) {}
     }
   };
 
@@ -107,8 +138,11 @@ export function usePTT({
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    if (rogerBeepRef.current) {
-      try { await beepOnRef.current?.replayAsync(); } catch (e) {}
+    if (rogerBeepRef.current && beepOnRef.current) {
+      try {
+        beepOnRef.current.seekTo(0);
+        beepOnRef.current.play();
+      } catch (e) {}
     }
     setIsSpeakingLocally(true);
     setActiveSpeaker({ name: usernameRef.current, isLocal: true });
@@ -121,23 +155,23 @@ export function usePTT({
     }
 
     try {
-      // Önceki kayıt nesnesi temizlenmemişse güvenle durdur ve sıfırla
       if (recordingRef.current) {
-        try { await recordingRef.current.stopAndUnloadAsync(); } catch (e) {}
+        try { await recordingRef.current.stop(); } catch (e) {}
         recordingRef.current = null;
       }
 
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await requestRecordingPermissionsAsync();
       console.log('[PTT] Mikrofon izin durumu:', permission.status);
       if (permission.status === 'granted') {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
         });
-        const { recording } = await Audio.Recording.createAsync(
-          Audio.RecordingOptionsPresets.LOW_QUALITY
-        );
-        recordingRef.current = recording;
+
+        const recorder = new AudioModule.AudioRecorder(RecordingPresets.LOW_QUALITY);
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        recordingRef.current = recorder;
         console.log('[PTT] Ses kaydı başlatıldı');
       } else {
         console.warn('[PTT] Mikrofon izni reddedildi!');
@@ -149,8 +183,11 @@ export function usePTT({
 
   const handleTalkEnd = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (rogerBeepRef.current) {
-      try { await beepOffRef.current?.replayAsync(); } catch (e) {}
+    if (rogerBeepRef.current && beepOffRef.current) {
+      try {
+        beepOffRef.current.seekTo(0);
+        beepOffRef.current.play();
+      } catch (e) {}
     }
     setIsSpeakingLocally(false);
     setActiveSpeaker(null);
@@ -158,13 +195,14 @@ export function usePTT({
     let audioBase64 = null;
     try {
       if (recordingRef.current) {
-        await recordingRef.current.stopAndUnloadAsync();
-        const uri = recordingRef.current.getURI();
+        await recordingRef.current.stop();
+        const uri = recordingRef.current.uri;
         console.log('[PTT] Kayıt dosyası URI:', uri);
         recordingRef.current = null;
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
+
+        await setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
         });
 
         if (uri) {
