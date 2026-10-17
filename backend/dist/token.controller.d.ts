@@ -24,7 +24,7 @@ export declare class TokenController {
     }>;
     getRoomState(roomName: string, participantName: string): {
         participants: ParticipantData[];
-        activeSpeaker: string;
+        activeSpeaker: string | null;
     };
     setSpeakState(body: {
         roomName: string;
@@ -35,7 +35,7 @@ export declare class TokenController {
         activeSpeaker?: undefined;
     } | {
         success: boolean;
-        activeSpeaker: string;
+        activeSpeaker: string | null | undefined;
     };
     updateLocation(body: {
         roomName: string;
@@ -65,6 +65,8 @@ export declare class TokenController {
         audioId: number;
     };
     getLatestAudio(roomName: string, lastAudioId: string, senderName: string): {
+        clip: null;
+    } | {
         clip: AudioClip;
     };
 }

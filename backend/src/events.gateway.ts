@@ -1,3 +1,4 @@
+import { OnModuleDestroy } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -8,6 +9,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { SpeakerLock } from './speaker-lock';
 
 interface RoomParticipant {
   socketId: string;
@@ -30,7 +32,6 @@ interface AudioClip {
 
 // In-memory oda yönetimi (WebSocket destekli)
 const roomsMap = new Map<string, Map<string, RoomParticipant>>(); // roomName -> (name -> RoomParticipant)
-const roomActiveSpeaker = new Map<string, string | null>(); // roomName -> activeSpeakerName
 const roomAudioClips = new Map<string, AudioClip[]>(); // roomName -> AudioClip[]
 
 @WebSocketGateway({
@@ -39,9 +40,15 @@ const roomAudioClips = new Map<string, AudioClip[]>(); // roomName -> AudioClip[
     methods: ['GET', 'POST'],
   },
 })
-export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
+
+  private readonly speakerLock = new SpeakerLock((roomName) => this.emitSpeakerCleared(roomName));
+
+  onModuleDestroy() {
+    this.speakerLock.dispose();
+  }
 
   handleConnection(client: Socket) {
     console.log(`[WS CONNECT] Socket bağlandı: ${client.id}`);
@@ -102,12 +109,12 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private leaveRoomInternal(client: Socket, roomName: string, participantName: string) {
     client.leave(roomName);
+    this.speakerLock.release(roomName, participantName);
     if (roomsMap.has(roomName)) {
       const participants = roomsMap.get(roomName)!;
       participants.delete(participantName);
       if (participants.size === 0) {
         roomsMap.delete(roomName);
-        roomActiveSpeaker.delete(roomName);
         roomAudioClips.delete(roomName);
       }
     }
@@ -124,13 +131,31 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { roomName, participantName } = payload;
     if (!roomName || !participantName) return;
 
-    roomActiveSpeaker.set(roomName, participantName);
+    this.speakerLock.acquire(roomName, participantName);
     console.log(`[WS PTT START] ${participantName} konuşuyor...`);
 
-    // Tüm oda üyelerine anında kimin konuştuğunu bildir
     this.server.to(roomName).emit('speaker_changed', {
       activeSpeaker: participantName,
     });
+  }
+
+  @SubscribeMessage('ptt_stop')
+  handlePttStop(
+    @MessageBody() payload: { roomName: string; participantName: string },
+  ) {
+    const { roomName, participantName } = payload;
+    if (!roomName || !participantName) return;
+    this.releaseSpeaker(roomName, participantName);
+  }
+
+  private releaseSpeaker(roomName: string, participantName?: string) {
+    if (this.speakerLock.release(roomName, participantName)) {
+      this.emitSpeakerCleared(roomName);
+    }
+  }
+
+  private emitSpeakerCleared(roomName: string) {
+    this.server.to(roomName).emit('speaker_changed', { activeSpeaker: null });
   }
 
   // --- 4. Bas-Konuş Durdurma & Ses Klibi Yayınlama Event'i (~40ms Canlı İletim) ---
@@ -142,11 +167,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { roomName, sender, audioBase64 } = payload;
     if (!roomName || !sender || !audioBase64) return { success: false };
 
-    // Konuşmacıyı sıfırla
-    if (roomActiveSpeaker.get(roomName) === sender) {
-      roomActiveSpeaker.set(roomName, null);
-      this.server.to(roomName).emit('speaker_changed', { activeSpeaker: null });
-    }
+    this.releaseSpeaker(roomName, sender);
 
     const newClip: AudioClip = {
       id: Date.now(),
@@ -212,7 +233,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       isSpeaking: p.isSpeaking,
     }));
 
-    const activeSpeaker = roomActiveSpeaker.get(roomName) || null;
+    const activeSpeaker = this.speakerLock.getSpeaker(roomName);
 
     this.server.to(roomName).emit('room_state_update', {
       participants,

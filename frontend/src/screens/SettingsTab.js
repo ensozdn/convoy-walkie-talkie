@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { MiniLangSelector } from '../components/LangSelectors';
 
-export function SettingsTab({ lang, changeLanguage, isEditingName, username, setEditingName, setIsEditingName, editingName, handleSaveName, rogerBeep, setRogerBeep, rogerBeepRef, beepOffRef, t, setIsEulaFromSettings, setShowEulaModal, triggerToast, setShowBlockedUsersModal, blockedUsers, setShowGuide }) {
+export function SettingsTab({ lang, changeLanguage, isEditingName, username, setEditingName, setIsEditingName, editingName, handleSaveName, rogerBeep, setRogerBeep, rogerBeepRef, playBeepOff, t, setIsEulaFromSettings, setShowEulaModal, triggerToast, setShowBlockedUsersModal, blockedUsers, setShowGuide }) {
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -103,10 +103,10 @@ export function SettingsTab({ lang, changeLanguage, isEditingName, username, set
                 rogerBeepRef.current = nextVal;
                 try {
                   await AsyncStorage.setItem('@convoy_roger_beep', JSON.stringify(nextVal));
-                } catch (e) {}
-                if (nextVal) {
-                  try { await beepOffRef.current?.replayAsync(); } catch (e) {}
+                } catch (e) {
+                  console.error('[SETTINGS] Roger beep tercihi kaydedilemedi:', e.message);
                 }
+                if (nextVal) playBeepOff();
               }}
               activeOpacity={0.85}
             >

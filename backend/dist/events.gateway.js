@@ -15,10 +15,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
+const speaker_lock_1 = require("./speaker-lock");
 const roomsMap = new Map();
-const roomActiveSpeaker = new Map();
 const roomAudioClips = new Map();
 let EventsGateway = class EventsGateway {
+    constructor() {
+        this.speakerLock = new speaker_lock_1.SpeakerLock((roomName) => this.emitSpeakerCleared(roomName));
+    }
+    onModuleDestroy() {
+        this.speakerLock.dispose();
+    }
     handleConnection(client) {
         console.log(`[WS CONNECT] Socket bağlandı: ${client.id}`);
     }
@@ -58,12 +64,12 @@ let EventsGateway = class EventsGateway {
     }
     leaveRoomInternal(client, roomName, participantName) {
         client.leave(roomName);
+        this.speakerLock.release(roomName, participantName);
         if (roomsMap.has(roomName)) {
             const participants = roomsMap.get(roomName);
             participants.delete(participantName);
             if (participants.size === 0) {
                 roomsMap.delete(roomName);
-                roomActiveSpeaker.delete(roomName);
                 roomAudioClips.delete(roomName);
             }
         }
@@ -74,20 +80,31 @@ let EventsGateway = class EventsGateway {
         const { roomName, participantName } = payload;
         if (!roomName || !participantName)
             return;
-        roomActiveSpeaker.set(roomName, participantName);
+        this.speakerLock.acquire(roomName, participantName);
         console.log(`[WS PTT START] ${participantName} konuşuyor...`);
         this.server.to(roomName).emit('speaker_changed', {
             activeSpeaker: participantName,
         });
     }
+    handlePttStop(payload) {
+        const { roomName, participantName } = payload;
+        if (!roomName || !participantName)
+            return;
+        this.releaseSpeaker(roomName, participantName);
+    }
+    releaseSpeaker(roomName, participantName) {
+        if (this.speakerLock.release(roomName, participantName)) {
+            this.emitSpeakerCleared(roomName);
+        }
+    }
+    emitSpeakerCleared(roomName) {
+        this.server.to(roomName).emit('speaker_changed', { activeSpeaker: null });
+    }
     handleAudioBroadcast(client, payload) {
         const { roomName, sender, audioBase64 } = payload;
         if (!roomName || !sender || !audioBase64)
             return { success: false };
-        if (roomActiveSpeaker.get(roomName) === sender) {
-            roomActiveSpeaker.set(roomName, null);
-            this.server.to(roomName).emit('speaker_changed', { activeSpeaker: null });
-        }
+        this.releaseSpeaker(roomName, sender);
         const newClip = {
             id: Date.now(),
             sender,
@@ -135,7 +152,7 @@ let EventsGateway = class EventsGateway {
             coords: p.coords,
             isSpeaking: p.isSpeaking,
         }));
-        const activeSpeaker = roomActiveSpeaker.get(roomName) || null;
+        const activeSpeaker = this.speakerLock.getSpeaker(roomName);
         this.server.to(roomName).emit('room_state_update', {
             participants,
             activeSpeaker,
@@ -171,6 +188,13 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], EventsGateway.prototype, "handlePttStart", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('ptt_stop'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handlePttStop", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('audio_broadcast'),
     __param(0, (0, websockets_1.ConnectedSocket)()),

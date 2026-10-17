@@ -8,7 +8,7 @@ Bu doküman, bu depoda geliştirme yapacak tüm yapay zeka ajanları (Antigravit
 * **Kod tabanında emoji kullanımı kesinlikle yasaktır.**
 * Arayüz metinlerinde, butonlarda, modal pencerelerde, toast bildirimlerinde ve alert mesajlarında emoji kullanılamaz.
 * Loglarda (`console.log`, `console.error`, `console.warn`), exception mesajlarında emoji bulunamaz.
-* Git commit mesajlarında (`feat: ✨ ...` gibi) emoji kullanılamaz; sadece standart metin kullanılır.
+* Git commit mesajlarında (`feat: add feature` gibi) emoji kullanılamaz; sadece standart metin kullanılır.
 * Kod içi yorum satırlarında emoji kullanılamaz.
 * Arayüz, kurumsal, ciddi, profesyonel ve modern bir tasarım dilini korumalıdır. İkon ihtiyacı sadece `@expo/vector-icons` gibi vektörel kütüphanelerle karşılanır.
 

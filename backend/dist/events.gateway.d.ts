@@ -1,7 +1,10 @@
+import { OnModuleDestroy } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
     server: Server;
+    private readonly speakerLock;
+    onModuleDestroy(): void;
     handleConnection(client: Socket): void;
     handleDisconnect(client: Socket): void;
     handleJoinRoom(client: Socket, payload: {
@@ -22,6 +25,12 @@ export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisc
         roomName: string;
         participantName: string;
     }): void;
+    handlePttStop(payload: {
+        roomName: string;
+        participantName: string;
+    }): void;
+    private releaseSpeaker;
+    private emitSpeakerCleared;
     handleAudioBroadcast(client: Socket, payload: {
         roomName: string;
         sender: string;

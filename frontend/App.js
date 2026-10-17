@@ -81,12 +81,13 @@ export default function App() {
   const {
     isSpeakingLocally,
     setIsSpeakingLocally,
-    beepOffRef,
+    playBeepOff,
     playIncoming,
-    stopIncoming,
+    dropIncomingFrom,
     handleTalkStart,
     handleTalkEnd,
   } = usePTT({
+    isInRoom,
     socketRef,
     roomCodeRef,
     usernameRef,
@@ -265,7 +266,7 @@ export default function App() {
     } catch (e) {}
 
     // Canlı çalan ses varsa anında durdur
-    await stopIncoming();
+    dropIncomingFrom(targetName);
     if (activeSpeaker && activeSpeaker.name === targetName) {
       setActiveSpeaker(null);
     }
@@ -568,7 +569,7 @@ export default function App() {
             rogerBeep={rogerBeep}
             setRogerBeep={setRogerBeep}
             rogerBeepRef={rogerBeepRef}
-            beepOffRef={beepOffRef}
+            playBeepOff={playBeepOff}
             t={t}
             setIsEulaFromSettings={setIsEulaFromSettings}
             setShowEulaModal={setShowEulaModal}
