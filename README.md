@@ -1,4 +1,4 @@
-# 🚗 Konvoy Telsiz Uygulaması
+#  Konvoy Telsiz Uygulaması
 
 Private konvoy iletişim sistemi - LiveKit + NestJS + React Native (Expo)
 
@@ -10,9 +10,9 @@ convoy-walkie-talkie/
 └── frontend/         # React Native (Expo) - Push-to-Talk UI
 ```
 
-## 🚀 Kurulum ve Çalıştırma
+##  Kurulum ve Çalıştırma
 
-### 1️⃣ LiveKit Sunucusunu Başlatın
+###  LiveKit Sunucusunu Başlatın
 
 Local test için Docker ile:
 
@@ -27,7 +27,7 @@ docker run --rm -p 7880:7880 \
 
 > **Production için:** AWS'de kendi LiveKit sunucunuzu kurmalısınız!
 
-### 2️⃣ Backend'i Başlatın
+###  Backend'i Başlatın
 
 ```bash
 cd backend
@@ -37,7 +37,7 @@ npm run dev
 
 Backend http://localhost:3000 adresinde çalışacak.
 
-### 3️⃣ Frontend'i Başlatın
+###  Frontend'i Başlatın
 
 Önce `frontend/App.js` dosyasındaki `BACKEND_URL`'i güncelleyin:
 
@@ -68,13 +68,13 @@ npm start
 5. "Konvoya Katıl" butonuna basın
 6. Devasa **BAS & KONUŞ** butonuna basılı tutarak konuşun!
 
-## 🔐 Güvenlik
+## Güvenlik
 
 - `.env` dosyasını `.gitignore`'a ekleyin
 - Production'da güçlü API key/secret kullanın
 - Backend'e sadece konvoy üyelerinin erişebileceği bir şifre mekanizması ekleyebilirsiniz
 
-## ⚙️ Yapılandırma
+##  Yapılandırma
 
 ### Backend (`backend/.env`)
 
@@ -91,7 +91,7 @@ PORT=3000
 const BACKEND_URL = "http://192.168.1.100:3000"; // IP'nizi yazın
 ```
 
-## 🐛 Sorun Giderme
+##  Sorun Giderme
 
 **"Token alınamadı" hatası:**
 
@@ -109,13 +109,13 @@ const BACKEND_URL = "http://192.168.1.100:3000"; // IP'nizi yazın
 
 - Bu normal! Expo Go production değil. TestFlight veya App Store build'i gerekli.
 
-## 📦 Production Deployment
+## Production Deployment
 
 1. **LiveKit**: AWS EC2'de kendi sunucunuzu kurun
 2. **Backend**: Heroku, Railway, veya AWS'de deploy edin
 3. **Frontend**: `eas build` ile native build alın ve TestFlight/Google Play'e yükleyin
 
-## 🛠 Teknolojiler
+## Teknolojiler
 
 - **LiveKit**: WebRTC media server
 - **NestJS**: Backend framework
@@ -124,4 +124,4 @@ const BACKEND_URL = "http://192.168.1.100:3000"; // IP'nizi yazın
 
 ---
 
-**İyi yolculuklar! 🚗📻**
+**İyi yolculuklar! **
