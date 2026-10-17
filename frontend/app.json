@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "Konvoy Telsiz",
+    "slug": "convoy-walkie-talkie",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.convoy.walkietalkie",
+      "buildNumber": "9",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Microphone access is required for real-time Push-to-Talk voice communication with convoy members.",
+        "NSLocationWhenInUseUsageDescription": "Location access is required to display your position and distance to other drivers on the convoy map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Background location access is required to transmit your position to convoy members while the app is in background.",
+        "NSLocationAlwaysUsageDescription": "Location permission is required for uninterrupted convoy map tracking.",
+        "UIBackgroundModes": [
+          "audio",
+          "location"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.convoy.walkietalkie",
+      "permissions": [
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "FOREGROUND_SERVICE_MICROPHONE",
+        "MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Uygulama arka plandayken konvoy üyelerine güncel konumunuzu iletmek için arka plan konum izni gereklidir.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "fed979c0-898f-44a0-a715-990e5f791f08"
+      }
+    }
+  }
+}
