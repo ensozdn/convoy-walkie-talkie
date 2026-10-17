@@ -1,4 +1,4 @@
-import { OnModuleDestroy } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -10,29 +10,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { SpeakerLock } from './speaker-lock';
+import { Coordinates, QuickPingPayload, QuickPingType, RoomRegistry } from './room-registry';
 
-interface RoomParticipant {
-  socketId: string;
-  name: string;
-  roomName: string;
-  lastSeen: number;
-  isSpeaking: boolean;
-  coords?: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-interface AudioClip {
-  id: number;
-  sender: string;
-  audioBase64: string;
-  timestamp: number;
-}
-
-// In-memory oda yönetimi (WebSocket destekli)
-const roomsMap = new Map<string, Map<string, RoomParticipant>>(); // roomName -> (name -> RoomParticipant)
-const roomAudioClips = new Map<string, AudioClip[]>(); // roomName -> AudioClip[]
+const STALE_SWEEP_INTERVAL_MS = 15000;
+const VALID_PING_TYPES = new Set<QuickPingType>(['break', 'slow', 'hazard', 'ok']);
 
 @WebSocketGateway({
   cors: {
@@ -40,89 +21,97 @@ const roomAudioClips = new Map<string, AudioClip[]>(); // roomName -> AudioClip[
     methods: ['GET', 'POST'],
   },
 })
-export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
+export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy {
   @WebSocketServer()
   server!: Server;
 
+  private readonly registry = new RoomRegistry();
   private readonly speakerLock = new SpeakerLock((roomName) => this.emitSpeakerCleared(roomName));
+  private sweepTimer: ReturnType<typeof setInterval> | null = null;
+
+  onModuleInit() {
+    this.sweepTimer = setInterval(() => this.sweepStaleParticipants(), STALE_SWEEP_INTERVAL_MS);
+  }
 
   onModuleDestroy() {
+    if (this.sweepTimer) {
+      clearInterval(this.sweepTimer);
+      this.sweepTimer = null;
+    }
     this.speakerLock.dispose();
   }
 
   handleConnection(client: Socket) {
-    console.log(`[WS CONNECT] Socket bağlandı: ${client.id}`);
+    console.log(`[WS CONNECT] Socket baglandi: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`[WS DISCONNECT] Socket ayrıldı: ${client.id}`);
+    console.log(`[WS DISCONNECT] Socket ayrildi: ${client.id}`);
     const data = client.data as { roomName?: string; participantName?: string };
     if (data && data.roomName && data.participantName) {
-      this.leaveRoomInternal(client, data.roomName, data.participantName);
+      this.leaveRoomInternal(client, data.roomName, data.participantName, true);
     }
   }
 
-  // --- 1. Odaya Katılma Event'i ---
   @SubscribeMessage('join_room')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomName: string; participantName: string; coords?: any },
+    @MessageBody() payload: { roomName: string; participantName: string; coords?: Coordinates },
   ) {
     const { roomName, participantName, coords } = payload;
     if (!roomName || !participantName) return { success: false };
 
-    // Socket'i Socket.io odasına dahil et (Izole yayın kanalı)
     client.join(roomName);
     client.data = { roomName, participantName };
 
-    if (!roomsMap.has(roomName)) {
-      roomsMap.set(roomName, new Map());
-    }
-    const participants = roomsMap.get(roomName)!;
-    
-    participants.set(participantName, {
-      socketId: client.id,
-      name: participantName,
-      roomName,
-      lastSeen: Date.now(),
-      isSpeaking: false,
-      coords: coords || null,
-    });
-
-    console.log(`[WS JOIN] ${participantName} "${roomName}" odasına katıldı.`);
-
-    // Odadaki herkese güncel durumu bildir (Push)
+    this.registry.join(roomName, participantName, client.id, coords);
+    console.log(`[WS JOIN] ${participantName} "${roomName}" odasina katildi.`);
     this.broadcastRoomState(roomName);
     return { success: true };
   }
 
-  // --- 2. Odadan Ayrılma Event'i ---
+  @SubscribeMessage('heartbeat')
+  handleHeartbeat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomName: string; participantName: string; coords?: Coordinates },
+  ) {
+    const { roomName, participantName, coords } = payload;
+    if (!roomName || !participantName) return { success: false };
+
+    client.data = { roomName, participantName };
+    const touched = this.registry.touch(roomName, participantName, client.id, coords);
+    if (!touched) {
+      return this.handleJoinRoom(client, payload);
+    }
+    return { success: true };
+  }
+
   @SubscribeMessage('leave_room')
   handleLeaveRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { roomName: string; participantName: string },
   ) {
     const { roomName, participantName } = payload;
-    this.leaveRoomInternal(client, roomName, participantName);
+    if (!roomName || !participantName) return { success: false };
+    this.leaveRoomInternal(client, roomName, participantName, false);
     return { success: true };
   }
 
-  private leaveRoomInternal(client: Socket, roomName: string, participantName: string) {
+  private leaveRoomInternal(
+    client: Socket,
+    roomName: string,
+    participantName: string,
+    requireMatchingSocket: boolean,
+  ) {
     client.leave(roomName);
+    const removed = this.registry.leave(roomName, participantName, client.id, requireMatchingSocket);
+    if (!removed) return;
+
     this.speakerLock.release(roomName, participantName);
-    if (roomsMap.has(roomName)) {
-      const participants = roomsMap.get(roomName)!;
-      participants.delete(participantName);
-      if (participants.size === 0) {
-        roomsMap.delete(roomName);
-        roomAudioClips.delete(roomName);
-      }
-    }
-    console.log(`[WS LEAVE] ${participantName} "${roomName}" odasından ayrıldı.`);
+    console.log(`[WS LEAVE] ${participantName} "${roomName}" odasindan ayrildi.`);
     this.broadcastRoomState(roomName);
   }
 
-  // --- 3. Bas-Konuş Başlatma Event'i ---
   @SubscribeMessage('ptt_start')
   handlePttStart(
     @ConnectedSocket() client: Socket,
@@ -131,8 +120,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     const { roomName, participantName } = payload;
     if (!roomName || !participantName) return;
 
+    this.registry.touch(roomName, participantName, client.id);
     this.speakerLock.acquire(roomName, participantName);
-    console.log(`[WS PTT START] ${participantName} konuşuyor...`);
+    console.log(`[WS PTT START] ${participantName} konusuyor...`);
 
     this.server.to(roomName).emit('speaker_changed', {
       activeSpeaker: participantName,
@@ -141,10 +131,12 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
 
   @SubscribeMessage('ptt_stop')
   handlePttStop(
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { roomName: string; participantName: string },
   ) {
     const { roomName, participantName } = payload;
     if (!roomName || !participantName) return;
+    this.registry.touch(roomName, participantName, client.id);
     this.releaseSpeaker(roomName, participantName);
   }
 
@@ -158,7 +150,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     this.server.to(roomName).emit('speaker_changed', { activeSpeaker: null });
   }
 
-  // --- 4. Bas-Konuş Durdurma & Ses Klibi Yayınlama Event'i (~40ms Canlı İletim) ---
   @SubscribeMessage('audio_broadcast')
   handleAudioBroadcast(
     @ConnectedSocket() client: Socket,
@@ -167,77 +158,90 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     const { roomName, sender, audioBase64 } = payload;
     if (!roomName || !sender || !audioBase64) return { success: false };
 
+    this.registry.touch(roomName, sender, client.id);
     this.releaseSpeaker(roomName, sender);
 
-    const newClip: AudioClip = {
-      id: Date.now(),
-      sender,
-      audioBase64,
-      timestamp: Date.now(),
-    };
-
-    // Bellekte son 5 klip sakla (otomatik bellek temizliği - RAM koruması)
-    if (!roomAudioClips.has(roomName)) {
-      roomAudioClips.set(roomName, []);
-    }
-    const clips = roomAudioClips.get(roomName)!;
-    clips.push(newClip);
-    if (clips.length > 5) clips.shift();
-
-    console.log(`[WS AUDIO BROADCAST] "${roomName}" odasına ${sender} ses gönderdi (boyut: ${audioBase64.length})`);
-
-    // Sesi gönderen HARİÇ tüm oda üyelerine ANINDA (Push ~40ms) fırlat
+    const newClip = this.registry.storeClip(roomName, sender, audioBase64);
+    console.log(`[WS AUDIO BROADCAST] "${roomName}" odasina ${sender} ses gonderdi (boyut: ${audioBase64.length})`);
     client.to(roomName).emit('audio_incoming', newClip);
 
     return { success: true, audioId: newClip.id };
   }
 
-  // --- 5. Canlı GPS Konum Güncelleme Event'i ---
   @SubscribeMessage('location_update')
   handleLocationUpdate(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomName: string; participantName: string; coords: any },
+    @MessageBody() payload: { roomName: string; participantName: string; coords: Coordinates },
   ) {
     const { roomName, participantName, coords } = payload;
     if (!roomName || !participantName || !coords) return;
 
-    if (roomsMap.has(roomName)) {
-      const participants = roomsMap.get(roomName)!;
-      const p = participants.get(participantName);
-      if (p) {
-        p.coords = coords;
-        p.lastSeen = Date.now();
-      }
-    }
-
-    // Odadaki diğer üyelere canlı konum paketini at
+    this.registry.touch(roomName, participantName, client.id, coords);
     client.to(roomName).emit('location_broadcast', {
       participantName,
       coords,
     });
   }
 
-  // --- Yardımcı: Odadaki Tüm Üyelere Durumu Yayınla ---
-  private broadcastRoomState(roomName: string) {
-    if (!roomsMap.has(roomName)) {
-      this.server.to(roomName).emit('room_state_update', {
-        participants: [],
-        activeSpeaker: null,
-      });
-      return;
+  @SubscribeMessage('quick_ping')
+  handleQuickPing(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { roomName: string; sender: string; pingType: QuickPingType },
+  ) {
+    const { roomName, sender, pingType } = payload;
+    if (!roomName || !sender || !VALID_PING_TYPES.has(pingType)) {
+      return { success: false };
     }
 
-    const participants = Array.from(roomsMap.get(roomName)!.values()).map((p) => ({
-      name: p.name,
-      coords: p.coords,
-      isSpeaking: p.isSpeaking,
-    }));
+    this.registry.touch(roomName, sender, client.id);
+    const eventPayload: QuickPingPayload = {
+      id: Date.now(),
+      sender,
+      pingType,
+      timestamp: Date.now(),
+    };
 
+    this.server.to(roomName).emit('quick_ping_incoming', eventPayload);
+    return { success: true, pingId: eventPayload.id };
+  }
+
+  @SubscribeMessage('set_waypoint')
+  handleSetWaypoint(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      roomName: string;
+      participantName: string;
+      coords: { latitude: number; longitude: number } | null;
+    },
+  ) {
+    const { roomName, participantName, coords } = payload;
+    if (!roomName || !participantName) return { success: false };
+
+    this.registry.touch(roomName, participantName, client.id);
+    if (!this.registry.isLeader(roomName, participantName)) {
+      return { success: false };
+    }
+
+    const waypoint = this.registry.setWaypoint(roomName, participantName, coords);
+    this.server.to(roomName).emit('waypoint_updated', { waypoint });
+    return { success: true, waypoint };
+  }
+
+  private sweepStaleParticipants() {
+    const sweptRooms = this.registry.sweepStale();
+    for (const { roomName, removedNames } of sweptRooms) {
+      for (const participantName of removedNames) {
+        this.speakerLock.release(roomName, participantName);
+        console.log(`[WS SWEEP] ${participantName} zaman asimi nedeniyle "${roomName}" odasindan temizlendi.`);
+      }
+      this.broadcastRoomState(roomName);
+    }
+  }
+
+  private broadcastRoomState(roomName: string) {
     const activeSpeaker = this.speakerLock.getSpeaker(roomName);
-
-    this.server.to(roomName).emit('room_state_update', {
-      participants,
-      activeSpeaker,
-    });
+    const snapshot = this.registry.getSnapshot(roomName, activeSpeaker);
+    this.server.to(roomName).emit('room_state_update', snapshot);
   }
 }

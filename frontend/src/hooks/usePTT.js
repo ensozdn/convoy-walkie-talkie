@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { setAudioModeAsync } from 'expo-audio';
 import { IDLE_AUDIO_MODE } from '../constants/audio';
@@ -17,9 +17,11 @@ export function usePTT({
   setActiveSpeaker,
 }) {
   const [isSpeakingLocally, setIsSpeakingLocally] = useState(false);
+  const [isChannelMuted, setIsChannelMuted] = useState(false);
+  const isChannelMutedRef = useRef(false);
   const isHeldRef = useRef(false);
   const { playBeepOn, playBeepOff } = useBeeps();
-  const { playIncoming, dropIncomingFrom, clearIncoming } = useIncomingAudio({
+  const { playIncoming: playIncomingRaw, dropIncomingFrom, clearIncoming } = useIncomingAudio({
     blockedUsersRef,
     rogerBeepRef,
     playBeepOff,
@@ -33,7 +35,11 @@ export function usePTT({
   }, []);
 
   useEffect(() => {
-    if (!isInRoom) return undefined;
+    if (!isInRoom) {
+      isChannelMutedRef.current = false;
+      setIsChannelMuted(false);
+      return undefined;
+    }
     voiceRecorder.arm().catch((e) => {
       console.error('[PTT] Mikrofon oturumu hazirlanamadi:', e.message);
     });
@@ -42,6 +48,22 @@ export function usePTT({
       voiceRecorder.release();
     };
   }, [isInRoom]);
+
+  const playIncoming = useCallback((clip) => {
+    if (isChannelMutedRef.current) return;
+    playIncomingRaw(clip);
+  }, [playIncomingRaw]);
+
+  const toggleChannelMute = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const nextMuted = !isChannelMutedRef.current;
+    isChannelMutedRef.current = nextMuted;
+    setIsChannelMuted(nextMuted);
+    if (nextMuted) {
+      clearIncoming();
+    }
+    return nextMuted;
+  }, [clearIncoming]);
 
   const emitToRoom = (eventName, extraPayload = {}) => {
     socketRef.current?.emit(eventName, {
@@ -54,6 +76,10 @@ export function usePTT({
     if (activeSpeaker && !activeSpeaker.isLocal) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
+    }
+    if (isChannelMutedRef.current) {
+      isChannelMutedRef.current = false;
+      setIsChannelMuted(false);
     }
     isHeldRef.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -92,6 +118,8 @@ export function usePTT({
   return {
     isSpeakingLocally,
     setIsSpeakingLocally,
+    isChannelMuted,
+    toggleChannelMute,
     playBeepOff,
     playIncoming,
     dropIncomingFrom,

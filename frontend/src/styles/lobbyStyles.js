@@ -1,0 +1,111 @@
+import { Platform } from 'react-native';
+import { IS_SMALL_DEVICE } from '../constants/config';
+import { COLORS, RADIUS } from './theme';
+
+const LOGO_SIZE = IS_SMALL_DEVICE ? 78 : 90;
+
+export const lobbyStyles = {
+  container: { flex: 1, backgroundColor: COLORS.bgPrimary },
+  roomRootContainer: { flex: 1, backgroundColor: COLORS.bgDeep },
+  roomContentSafeArea: { flex: 1, backgroundColor: COLORS.bgPrimary },
+  lobbyOuter: {
+    flex: 1, paddingHorizontal: IS_SMALL_DEVICE ? 16 : 22,
+    paddingTop: Platform.OS === 'android' ? 14 : 8, paddingBottom: 16, justifyContent: 'space-between',
+  },
+  lobbyTopBar: {
+    width: '100%', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 4,
+  },
+  lobbyTopBarRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  infoGuideButton: {
+    width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.bgSurface,
+    borderWidth: 1, borderColor: COLORS.borderDefault, alignItems: 'center', justifyContent: 'center',
+  },
+  miniLangRow: {
+    flexDirection: 'row', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.pill,
+    padding: 2, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  miniLangBtn: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center' },
+  miniLangBtnActive: { backgroundColor: COLORS.accentCyan },
+  miniLangText: { color: COLORS.textDim, fontSize: 11, fontWeight: '800' },
+  miniLangTextActive: { color: COLORS.bgPrimary },
+  langSelectorRow: {
+    flexDirection: 'row', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.sm,
+    padding: 3, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  langBtn: { flex: 1, paddingVertical: 8, borderRadius: RADIUS.xs, alignItems: 'center' },
+  langBtnActive: { backgroundColor: COLORS.accentCyan },
+  langBtnText: { color: COLORS.textMuted, fontSize: 12, fontWeight: '800' },
+  langBtnTextActive: { color: COLORS.bgPrimary },
+  lobbyHeroSection: {
+    alignItems: 'center', marginTop: IS_SMALL_DEVICE ? 2 : 8, marginBottom: IS_SMALL_DEVICE ? 14 : 20,
+  },
+  lobbyLogoWrapper: {
+    width: LOGO_SIZE + 12, height: LOGO_SIZE + 12,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 14,
+  },
+  lobbyNeonBorder: {
+    position: 'absolute',
+    width: LOGO_SIZE + 8,
+    height: LOGO_SIZE + 8,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: COLORS.accentCyan,
+    shadowColor: COLORS.accentCyan,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  lobbyLogoImage: {
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.45)',
+  },
+  title: {
+    color: COLORS.white, fontSize: IS_SMALL_DEVICE ? 24 : 28, fontWeight: '900', letterSpacing: 0.4, textAlign: 'center',
+  },
+  subtitle: {
+    color: COLORS.textMuted, fontSize: IS_SMALL_DEVICE ? 13 : 14, fontWeight: '500',
+    textAlign: 'center', marginTop: 6, paddingHorizontal: 12, lineHeight: 20,
+  },
+  card: {
+    width: '100%', backgroundColor: COLORS.bgElevated, borderRadius: RADIUS.xl,
+    padding: IS_SMALL_DEVICE ? 18 : 22, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  inputContainer: { width: '100%', marginBottom: 16 },
+  inputLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  inputLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
+  inputWrapper: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput,
+    borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.borderDefault,
+    paddingHorizontal: 14, height: IS_SMALL_DEVICE ? 48 : 54, gap: 10,
+  },
+  inputWrapperFocused: { borderColor: COLORS.accentCyan },
+  input: { flex: 1, color: COLORS.white, fontSize: 16, fontWeight: '700', paddingVertical: 0 },
+  codeInput: { fontSize: 22, fontWeight: '900', letterSpacing: 4, textAlign: 'center', color: COLORS.accentCyan },
+  lobbyActionsStack: { width: '100%', gap: 12, marginTop: 4 },
+  actionCardPrimary: {
+    width: '100%', backgroundColor: COLORS.accentCyan, borderRadius: RADIUS.lg,
+    paddingVertical: IS_SMALL_DEVICE ? 14 : 16, paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  actionCardSecondary: {
+    width: '100%', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.lg,
+    paddingVertical: IS_SMALL_DEVICE ? 14 : 16, paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1.5, borderColor: COLORS.borderDefault,
+  },
+  actionCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  actionIconCirclePrimary: {
+    width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(15, 23, 42, 0.16)', alignItems: 'center', justifyContent: 'center',
+  },
+  actionIconCircleSecondary: {
+    width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.accentCyanSoft, alignItems: 'center', justifyContent: 'center',
+  },
+  actionTitlePrimary: { color: COLORS.bgPrimary, fontSize: 16, fontWeight: '900' },
+  actionSubPrimary: { color: '#0c4a6e', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  actionTitleSecondary: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
+  actionSubSecondary: { color: COLORS.textMuted, fontSize: 12, fontWeight: '500', marginTop: 2 },
+};

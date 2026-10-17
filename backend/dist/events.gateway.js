@@ -16,23 +16,33 @@ exports.EventsGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const speaker_lock_1 = require("./speaker-lock");
-const roomsMap = new Map();
-const roomAudioClips = new Map();
+const room_registry_1 = require("./room-registry");
+const STALE_SWEEP_INTERVAL_MS = 15000;
+const VALID_PING_TYPES = new Set(['break', 'slow', 'hazard', 'ok']);
 let EventsGateway = class EventsGateway {
     constructor() {
+        this.registry = new room_registry_1.RoomRegistry();
         this.speakerLock = new speaker_lock_1.SpeakerLock((roomName) => this.emitSpeakerCleared(roomName));
+        this.sweepTimer = null;
+    }
+    onModuleInit() {
+        this.sweepTimer = setInterval(() => this.sweepStaleParticipants(), STALE_SWEEP_INTERVAL_MS);
     }
     onModuleDestroy() {
+        if (this.sweepTimer) {
+            clearInterval(this.sweepTimer);
+            this.sweepTimer = null;
+        }
         this.speakerLock.dispose();
     }
     handleConnection(client) {
-        console.log(`[WS CONNECT] Socket bağlandı: ${client.id}`);
+        console.log(`[WS CONNECT] Socket baglandi: ${client.id}`);
     }
     handleDisconnect(client) {
-        console.log(`[WS DISCONNECT] Socket ayrıldı: ${client.id}`);
+        console.log(`[WS DISCONNECT] Socket ayrildi: ${client.id}`);
         const data = client.data;
         if (data && data.roomName && data.participantName) {
-            this.leaveRoomInternal(client, data.roomName, data.participantName);
+            this.leaveRoomInternal(client, data.roomName, data.participantName, true);
         }
     }
     handleJoinRoom(client, payload) {
@@ -41,55 +51,54 @@ let EventsGateway = class EventsGateway {
             return { success: false };
         client.join(roomName);
         client.data = { roomName, participantName };
-        if (!roomsMap.has(roomName)) {
-            roomsMap.set(roomName, new Map());
-        }
-        const participants = roomsMap.get(roomName);
-        participants.set(participantName, {
-            socketId: client.id,
-            name: participantName,
-            roomName,
-            lastSeen: Date.now(),
-            isSpeaking: false,
-            coords: coords || null,
-        });
-        console.log(`[WS JOIN] ${participantName} "${roomName}" odasına katıldı.`);
+        this.registry.join(roomName, participantName, client.id, coords);
+        console.log(`[WS JOIN] ${participantName} "${roomName}" odasina katildi.`);
         this.broadcastRoomState(roomName);
+        return { success: true };
+    }
+    handleHeartbeat(client, payload) {
+        const { roomName, participantName, coords } = payload;
+        if (!roomName || !participantName)
+            return { success: false };
+        client.data = { roomName, participantName };
+        const touched = this.registry.touch(roomName, participantName, client.id, coords);
+        if (!touched) {
+            return this.handleJoinRoom(client, payload);
+        }
         return { success: true };
     }
     handleLeaveRoom(client, payload) {
         const { roomName, participantName } = payload;
-        this.leaveRoomInternal(client, roomName, participantName);
+        if (!roomName || !participantName)
+            return { success: false };
+        this.leaveRoomInternal(client, roomName, participantName, false);
         return { success: true };
     }
-    leaveRoomInternal(client, roomName, participantName) {
+    leaveRoomInternal(client, roomName, participantName, requireMatchingSocket) {
         client.leave(roomName);
+        const removed = this.registry.leave(roomName, participantName, client.id, requireMatchingSocket);
+        if (!removed)
+            return;
         this.speakerLock.release(roomName, participantName);
-        if (roomsMap.has(roomName)) {
-            const participants = roomsMap.get(roomName);
-            participants.delete(participantName);
-            if (participants.size === 0) {
-                roomsMap.delete(roomName);
-                roomAudioClips.delete(roomName);
-            }
-        }
-        console.log(`[WS LEAVE] ${participantName} "${roomName}" odasından ayrıldı.`);
+        console.log(`[WS LEAVE] ${participantName} "${roomName}" odasindan ayrildi.`);
         this.broadcastRoomState(roomName);
     }
     handlePttStart(client, payload) {
         const { roomName, participantName } = payload;
         if (!roomName || !participantName)
             return;
+        this.registry.touch(roomName, participantName, client.id);
         this.speakerLock.acquire(roomName, participantName);
-        console.log(`[WS PTT START] ${participantName} konuşuyor...`);
+        console.log(`[WS PTT START] ${participantName} konusuyor...`);
         this.server.to(roomName).emit('speaker_changed', {
             activeSpeaker: participantName,
         });
     }
-    handlePttStop(payload) {
+    handlePttStop(client, payload) {
         const { roomName, participantName } = payload;
         if (!roomName || !participantName)
             return;
+        this.registry.touch(roomName, participantName, client.id);
         this.releaseSpeaker(roomName, participantName);
     }
     releaseSpeaker(roomName, participantName) {
@@ -104,21 +113,10 @@ let EventsGateway = class EventsGateway {
         const { roomName, sender, audioBase64 } = payload;
         if (!roomName || !sender || !audioBase64)
             return { success: false };
+        this.registry.touch(roomName, sender, client.id);
         this.releaseSpeaker(roomName, sender);
-        const newClip = {
-            id: Date.now(),
-            sender,
-            audioBase64,
-            timestamp: Date.now(),
-        };
-        if (!roomAudioClips.has(roomName)) {
-            roomAudioClips.set(roomName, []);
-        }
-        const clips = roomAudioClips.get(roomName);
-        clips.push(newClip);
-        if (clips.length > 5)
-            clips.shift();
-        console.log(`[WS AUDIO BROADCAST] "${roomName}" odasına ${sender} ses gönderdi (boyut: ${audioBase64.length})`);
+        const newClip = this.registry.storeClip(roomName, sender, audioBase64);
+        console.log(`[WS AUDIO BROADCAST] "${roomName}" odasina ${sender} ses gonderdi (boyut: ${audioBase64.length})`);
         client.to(roomName).emit('audio_incoming', newClip);
         return { success: true, audioId: newClip.id };
     }
@@ -126,37 +124,53 @@ let EventsGateway = class EventsGateway {
         const { roomName, participantName, coords } = payload;
         if (!roomName || !participantName || !coords)
             return;
-        if (roomsMap.has(roomName)) {
-            const participants = roomsMap.get(roomName);
-            const p = participants.get(participantName);
-            if (p) {
-                p.coords = coords;
-                p.lastSeen = Date.now();
-            }
-        }
+        this.registry.touch(roomName, participantName, client.id, coords);
         client.to(roomName).emit('location_broadcast', {
             participantName,
             coords,
         });
     }
-    broadcastRoomState(roomName) {
-        if (!roomsMap.has(roomName)) {
-            this.server.to(roomName).emit('room_state_update', {
-                participants: [],
-                activeSpeaker: null,
-            });
-            return;
+    handleQuickPing(client, payload) {
+        const { roomName, sender, pingType } = payload;
+        if (!roomName || !sender || !VALID_PING_TYPES.has(pingType)) {
+            return { success: false };
         }
-        const participants = Array.from(roomsMap.get(roomName).values()).map((p) => ({
-            name: p.name,
-            coords: p.coords,
-            isSpeaking: p.isSpeaking,
-        }));
+        this.registry.touch(roomName, sender, client.id);
+        const eventPayload = {
+            id: Date.now(),
+            sender,
+            pingType,
+            timestamp: Date.now(),
+        };
+        this.server.to(roomName).emit('quick_ping_incoming', eventPayload);
+        return { success: true, pingId: eventPayload.id };
+    }
+    handleSetWaypoint(client, payload) {
+        const { roomName, participantName, coords } = payload;
+        if (!roomName || !participantName)
+            return { success: false };
+        this.registry.touch(roomName, participantName, client.id);
+        if (!this.registry.isLeader(roomName, participantName)) {
+            return { success: false };
+        }
+        const waypoint = this.registry.setWaypoint(roomName, participantName, coords);
+        this.server.to(roomName).emit('waypoint_updated', { waypoint });
+        return { success: true, waypoint };
+    }
+    sweepStaleParticipants() {
+        const sweptRooms = this.registry.sweepStale();
+        for (const { roomName, removedNames } of sweptRooms) {
+            for (const participantName of removedNames) {
+                this.speakerLock.release(roomName, participantName);
+                console.log(`[WS SWEEP] ${participantName} zaman asimi nedeniyle "${roomName}" odasindan temizlendi.`);
+            }
+            this.broadcastRoomState(roomName);
+        }
+    }
+    broadcastRoomState(roomName) {
         const activeSpeaker = this.speakerLock.getSpeaker(roomName);
-        this.server.to(roomName).emit('room_state_update', {
-            participants,
-            activeSpeaker,
-        });
+        const snapshot = this.registry.getSnapshot(roomName, activeSpeaker);
+        this.server.to(roomName).emit('room_state_update', snapshot);
     }
 };
 exports.EventsGateway = EventsGateway;
@@ -172,6 +186,14 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], EventsGateway.prototype, "handleJoinRoom", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('heartbeat'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handleHeartbeat", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('leave_room'),
     __param(0, (0, websockets_1.ConnectedSocket)()),
@@ -190,9 +212,10 @@ __decorate([
 ], EventsGateway.prototype, "handlePttStart", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('ptt_stop'),
-    __param(0, (0, websockets_1.MessageBody)()),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], EventsGateway.prototype, "handlePttStop", null);
 __decorate([
@@ -211,6 +234,22 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], EventsGateway.prototype, "handleLocationUpdate", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('quick_ping'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handleQuickPing", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('set_waypoint'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handleSetWaypoint", null);
 exports.EventsGateway = EventsGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {

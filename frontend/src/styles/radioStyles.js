@@ -1,0 +1,106 @@
+import { IS_SMALL_DEVICE } from '../constants/config';
+import { COLORS, RADIUS } from './theme';
+
+export const radioStyles = {
+  subScreenHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  iconBackBtn: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.bgInput,
+    borderWidth: 1, borderColor: COLORS.borderDefault, alignItems: 'center', justifyContent: 'center',
+  },
+  subScreenTitle: { color: COLORS.white, fontSize: 17, fontWeight: '800' },
+  codeBoxContainer: {
+    width: '100%', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.lg,
+    paddingVertical: 18, paddingHorizontal: 10, borderWidth: 1.5, borderColor: COLORS.borderDefault,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  codeBoxLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 12 },
+  codeBoxLabel: { color: COLORS.accentCyan, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  codeBoxLabelCopied: { color: COLORS.txGreenBright },
+  charBoxesRow: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 4,
+  },
+  charBox: {
+    flex: 1, maxWidth: 36, height: IS_SMALL_DEVICE ? 44 : 48, borderRadius: 10,
+    backgroundColor: COLORS.bgElevated, borderWidth: 1, borderColor: COLORS.borderHighlight,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  charBoxCopied: { borderColor: COLORS.txGreenBright, backgroundColor: COLORS.txGreenSoft },
+  charBoxText: { color: COLORS.white, fontSize: IS_SMALL_DEVICE ? 18 : 20, fontWeight: '900' },
+  charBoxTextCopied: { color: COLORS.txGreenBright },
+  charDashContainer: { width: 12, alignItems: 'center', justifyContent: 'center' },
+  charDashText: { color: COLORS.textDim, fontSize: 20, fontWeight: '900' },
+  createButton: {
+    width: '100%', backgroundColor: COLORS.accentCyan, borderRadius: RADIUS.md,
+    paddingVertical: 15, alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  createButtonText: { color: COLORS.bgPrimary, fontSize: 15, fontWeight: '900', letterSpacing: 0.4 },
+  shareButton: {
+    width: '100%', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md,
+    paddingVertical: 14, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: COLORS.borderDefault, marginBottom: 10,
+  },
+  shareButtonText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+  btnCenterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  recentCodesContainer: { marginTop: 6, width: '100%' },
+  recentCodesLabel: { color: COLORS.textDim, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 8 },
+  recentCodesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  recentCodeChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgInput,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  recentCodeChipText: { color: COLORS.accentCyan, fontSize: 13, fontWeight: '800', letterSpacing: 1 },
+  radioCockpitContainer: {
+    flex: 1, paddingHorizontal: IS_SMALL_DEVICE ? 12 : 16,
+    paddingTop: IS_SMALL_DEVICE ? 6 : 10, paddingBottom: IS_SMALL_DEVICE ? 8 : 12, justifyContent: 'space-between',
+  },
+  hudHeaderCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: COLORS.bgElevated, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 11,
+    borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  hudHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  hudChannelCodeBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgInput,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: RADIUS.xs, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  hudSignalDot: { width: 8, height: 8, borderRadius: 4 },
+  hudRoomCodeText: { color: COLORS.white, fontSize: 15, fontWeight: '900', letterSpacing: 1 },
+  hudCountBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.accentCyanSoft,
+    paddingHorizontal: 9, paddingVertical: 5, borderRadius: RADIUS.pill,
+  },
+  hudCountText: { color: COLORS.accentCyan, fontSize: 12, fontWeight: '800' },
+  hudHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  hudMuteBtn: {
+    width: 34, height: 34, borderRadius: RADIUS.xs, backgroundColor: COLORS.bgInput,
+    borderWidth: 1, borderColor: COLORS.borderDefault, alignItems: 'center', justifyContent: 'center',
+  },
+  hudMuteBtnActive: { backgroundColor: COLORS.rxAmberSoft, borderColor: COLORS.rxAmber },
+  leaveButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.dangerRedSoft,
+    paddingHorizontal: 11, paddingVertical: 7, borderRadius: RADIUS.xs, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  leaveButtonText: { color: COLORS.dangerRed, fontSize: 12, fontWeight: '800' },
+  channelMonitorCard: {
+    backgroundColor: COLORS.bgElevated, borderRadius: RADIUS.lg,
+    paddingVertical: IS_SMALL_DEVICE ? 14 : 16, paddingHorizontal: 16,
+    borderWidth: 1.5, borderColor: COLORS.borderDefault,
+  },
+  channelMainRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  channelMainLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  channelWaveBadge: {
+    width: IS_SMALL_DEVICE ? 42 : 46, height: IS_SMALL_DEVICE ? 42 : 46,
+    borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+  },
+  channelPrimaryText: { color: COLORS.white, fontSize: IS_SMALL_DEVICE ? 18 : 20, fontWeight: '900', letterSpacing: 0.8 },
+  channelDistanceBadge: {
+    backgroundColor: COLORS.bgInput, paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  channelDistanceBadgeText: { color: COLORS.rxAmberBright, fontSize: 12, fontWeight: '800' },
+  pingAlertBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.rxAmberSoft,
+    borderRadius: RADIUS.sm, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderColor: COLORS.rxAmber,
+  },
+  pingAlertText: { color: COLORS.white, fontSize: 12, fontWeight: '800', flex: 1 },
+};

@@ -1,116 +1,258 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { AppState } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { io } from 'socket.io-client';
 import { BACKEND_URL, DEFAULT_REGION } from '../constants/config';
+import { warmUpBackend } from '../utils/serverWarmup';
 
-/**
- * Oda soket bağlantısı: bağlan/ayrıl, katılımcı listesi, konuşan kişi ve bağlantı durumu.
- */
+const HEARTBEAT_INTERVAL_MS = 15000;
+const PING_DISPLAY_MS = 5500;
+
 export function useRoomSocket({
-  socketRef,
-  roomCodeRef,
-  usernameRef,
-  blockedUsersRef,
-  setActiveSpeaker,
-  playIncoming,
+  socketRef, roomCodeRef, usernameRef, blockedUsersRef,
+  userLocation, setActiveSpeaker, playIncoming,
 }) {
   const [connectionState, setConnectionState] = useState('connected');
   const [participants, setParticipants] = useState([]);
+  const [leaderName, setLeaderName] = useState(null);
+  const [waypoint, setWaypoint] = useState(null);
+  const [activePing, setActivePing] = useState(null);
 
-  const connect = (name, code, coords) => {
+  const latestCoordsRef = useRef(userLocation || DEFAULT_REGION);
+  const isSessionActiveRef = useRef(false);
+  const heartbeatTimerRef = useRef(null);
+  const pingTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (userLocation) latestCoordsRef.current = userLocation;
+  }, [userLocation]);
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatTimerRef.current) {
+      clearInterval(heartbeatTimerRef.current);
+      heartbeatTimerRef.current = null;
+    }
+  }, []);
+
+  const clearPingTimer = useCallback(() => {
+    if (pingTimerRef.current) {
+      clearTimeout(pingTimerRef.current);
+      pingTimerRef.current = null;
+    }
+  }, []);
+
+  const emitJoinCurrentRoom = useCallback((socketInstance) => {
+    const activeSocket = socketInstance || socketRef.current;
+    const roomName = roomCodeRef.current;
+    const participantName = usernameRef.current;
+    if (!activeSocket || !roomName || !participantName) return;
+
+    activeSocket.emit('join_room', {
+      roomName,
+      participantName,
+      coords: latestCoordsRef.current,
+    });
+  }, [roomCodeRef, socketRef, usernameRef]);
+
+  const startHeartbeat = useCallback((socketInstance) => {
+    stopHeartbeat();
+    heartbeatTimerRef.current = setInterval(() => {
+      const activeSocket = socketInstance || socketRef.current;
+      const roomName = roomCodeRef.current;
+      const participantName = usernameRef.current;
+      if (!activeSocket?.connected || !roomName || !participantName) return;
+      activeSocket.emit('heartbeat', {
+        roomName,
+        participantName,
+        coords: latestCoordsRef.current,
+      });
+    }, HEARTBEAT_INTERVAL_MS);
+  }, [roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
+
+  const applyActiveSpeaker = useCallback((speakerName) => {
+    if (!speakerName || blockedUsersRef.current.includes(speakerName)) {
+      setActiveSpeaker(null);
+      return;
+    }
+    setActiveSpeaker({
+      name: speakerName,
+      isLocal: speakerName === usernameRef.current,
+    });
+  }, [blockedUsersRef, setActiveSpeaker, usernameRef]);
+
+  const connect = useCallback((name, code, coords) => {
+    stopHeartbeat();
+    clearPingTimer();
     if (socketRef.current) {
+      socketRef.current.removeAllListeners();
       socketRef.current.disconnect();
     }
+
+    roomCodeRef.current = code;
+    usernameRef.current = name;
+    if (coords) latestCoordsRef.current = coords;
+    isSessionActiveRef.current = true;
 
     const socket = io(BACKEND_URL, {
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 20,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
     });
-
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('[WS] Sunucuya bağlandı! Socket ID:', socket.id);
       setConnectionState('connected');
-      socket.emit('join_room', {
-        roomName: code,
-        participantName: name,
-        coords,
-      });
+      emitJoinCurrentRoom(socket);
+      startHeartbeat(socket);
     });
 
     socket.on('disconnect', () => {
-      console.warn('[WS] Sunucu bağlantısı koptu');
-      setConnectionState('disconnected');
+      setConnectionState(isSessionActiveRef.current ? 'reconnecting' : 'disconnected');
     });
 
-    socket.on('connect_error', () => {
+    socket.on('connect_error', (err) => {
+      console.warn('[WS CONNECT ERROR]:', err?.message ?? err);
       setConnectionState('reconnecting');
     });
 
+    socket.io.on('reconnect_attempt', () => setConnectionState('reconnecting'));
+    socket.io.on('reconnect', () => {
+      setConnectionState('connected');
+      emitJoinCurrentRoom(socket);
+    });
+
     socket.on('room_state_update', (data) => {
-      if (!data || !data.participants) return;
-      const remoteList = data.participants.map((p) => ({
-        id: p.name,
-        name: p.name,
-        isLocal: p.name === name,
-        coords: p.coords || DEFAULT_REGION,
-      }));
-      setParticipants(remoteList);
-
-      if (data.activeSpeaker) {
-        if (blockedUsersRef.current.includes(data.activeSpeaker)) {
-          setActiveSpeaker(null);
-        } else {
-          setActiveSpeaker({
-            name: data.activeSpeaker,
-            isLocal: data.activeSpeaker === name,
-          });
-        }
-      } else {
-        setActiveSpeaker(null);
+      if (!data || !Array.isArray(data.participants)) return;
+      const currentName = usernameRef.current;
+      const resolvedLeader = data.leaderName ?? data.participants[0]?.name ?? null;
+      setLeaderName(resolvedLeader);
+      if ('waypoint' in data) {
+        setWaypoint(data.waypoint ?? null);
       }
+
+      setParticipants(
+        data.participants.map((p) => ({
+          id: p.name,
+          name: p.name,
+          isLocal: p.name === currentName,
+          isLeader: Boolean(p.isLeader || (resolvedLeader && p.name === resolvedLeader)),
+          coords: p.coords || DEFAULT_REGION,
+        }))
+      );
+      applyActiveSpeaker(data.activeSpeaker);
     });
 
-    socket.on('speaker_changed', (data) => {
-      if (data && data.activeSpeaker) {
-        if (blockedUsersRef.current.includes(data.activeSpeaker)) {
-          setActiveSpeaker(null);
-        } else {
-          setActiveSpeaker({
-            name: data.activeSpeaker,
-            isLocal: data.activeSpeaker === name,
-          });
-        }
-      } else {
-        setActiveSpeaker(null);
-      }
+    socket.on('waypoint_updated', (data) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setWaypoint(data?.waypoint ?? null);
     });
 
+    socket.on('speaker_changed', (data) => applyActiveSpeaker(data?.activeSpeaker ?? null));
     socket.on('audio_incoming', playIncoming);
 
     socket.on('location_broadcast', (data) => {
-      if (!data || !data.participantName || !data.coords) return;
+      if (!data?.participantName || !data?.coords) return;
       setParticipants((prev) =>
-        prev.map((p) =>
-          p.name === data.participantName ? { ...p, coords: data.coords } : p
-        )
+        prev.map((p) => (p.name === data.participantName ? { ...p, coords: data.coords } : p))
       );
     });
-  };
 
-  const leaveRoom = () => {
+    socket.on('quick_ping_incoming', (data) => {
+      if (!data?.sender || !data?.pingType) return;
+      if (blockedUsersRef.current.includes(data.sender)) return;
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      clearPingTimer();
+      setActivePing({
+        id: data.id || Date.now(),
+        sender: data.sender,
+        pingType: data.pingType,
+        isLocal: data.sender === usernameRef.current,
+      });
+      pingTimerRef.current = setTimeout(() => setActivePing(null), PING_DISPLAY_MS);
+    });
+  }, [
+    applyActiveSpeaker, blockedUsersRef, clearPingTimer, emitJoinCurrentRoom,
+    playIncoming, roomCodeRef, socketRef, startHeartbeat, stopHeartbeat, usernameRef,
+  ]);
+
+  const sendQuickPing = useCallback((pingType) => {
+    const activeSocket = socketRef.current;
+    const roomName = roomCodeRef.current;
+    const sender = usernameRef.current;
+    if (!activeSocket?.connected || !roomName || !sender) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    activeSocket.emit('quick_ping', { roomName, sender, pingType });
+  }, [roomCodeRef, socketRef, usernameRef]);
+
+  const setConvoyWaypoint = useCallback((coords) => {
+    const activeSocket = socketRef.current;
+    const roomName = roomCodeRef.current;
+    const participantName = usernameRef.current;
+    if (!activeSocket?.connected || !roomName || !participantName) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    activeSocket.emit('set_waypoint', { roomName, participantName, coords });
+  }, [roomCodeRef, socketRef, usernameRef]);
+
+  const leaveRoom = useCallback(() => {
+    isSessionActiveRef.current = false;
+    stopHeartbeat();
+    clearPingTimer();
+    setActivePing(null);
+    setLeaderName(null);
+    setWaypoint(null);
     if (socketRef.current) {
       socketRef.current.emit('leave_room', {
         roomName: roomCodeRef.current,
         participantName: usernameRef.current,
       });
+      socketRef.current.removeAllListeners();
       socketRef.current.disconnect();
       socketRef.current = null;
     }
+    setParticipants([]);
     setConnectionState('connected');
-  };
+  }, [clearPingTimer, roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
 
-  return { connectionState, participants, connect, leaveRoom };
+  useEffect(() => {
+    const warmupAbort = new AbortController();
+    warmUpBackend(warmupAbort.signal);
+
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') return;
+      if (!isSessionActiveRef.current || !roomCodeRef.current) {
+        warmUpBackend(warmupAbort.signal);
+        return;
+      }
+      const activeSocket = socketRef.current;
+      if (!activeSocket) {
+        connect(usernameRef.current, roomCodeRef.current, latestCoordsRef.current);
+      } else if (activeSocket.connected) {
+        emitJoinCurrentRoom(activeSocket);
+      } else {
+        setConnectionState('reconnecting');
+        activeSocket.connect();
+      }
+    });
+
+    return () => {
+      warmupAbort.abort();
+      appStateSubscription.remove();
+      stopHeartbeat();
+      clearPingTimer();
+      if (socketRef.current) {
+        socketRef.current.removeAllListeners();
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [clearPingTimer, connect, emitJoinCurrentRoom, roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
+
+  return {
+    connectionState, participants, leaderName, waypoint, setConvoyWaypoint,
+    activePing, sendQuickPing, connect, leaveRoom, syncRoomIdentity: emitJoinCurrentRoom,
+  };
 }

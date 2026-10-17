@@ -1,0 +1,92 @@
+import { COLORS, RADIUS } from './theme';
+
+export const ugcModalStyles = {
+  eulaCard: {
+    width: '100%', maxWidth: 440, maxHeight: '86%', backgroundColor: COLORS.bgElevated,
+    borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  eulaHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  eulaTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  eulaIconBox: {
+    width: 38, height: 38, borderRadius: 12, backgroundColor: COLORS.accentCyanSoft, alignItems: 'center', justifyContent: 'center',
+  },
+  eulaTitleText: { color: COLORS.white, fontSize: 15, fontWeight: '900' },
+  eulaSubtitleText: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  eulaLangSwitch: {
+    flexDirection: 'row', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.xs,
+    padding: 2, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  eulaLangBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  eulaLangBtnActive: { backgroundColor: COLORS.accentCyan },
+  eulaLangText: { color: COLORS.textDim, fontSize: 11, fontWeight: '800' },
+  eulaLangTextActive: { color: COLORS.bgPrimary },
+  eulaWarningBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.rxAmberSoft,
+    borderWidth: 1, borderColor: COLORS.rxAmber, borderRadius: RADIUS.sm,
+    paddingHorizontal: 12, paddingVertical: 9, marginBottom: 12,
+  },
+  eulaWarningTitle: { color: COLORS.rxAmberBright, fontSize: 11, fontWeight: '900', flex: 1 },
+  eulaScrollView: { marginBottom: 14 },
+  eulaBodyText: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19, marginBottom: 12 },
+  eulaPointsContainer: { gap: 10, marginBottom: 14 },
+  eulaPointRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  eulaPointText: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 18, flex: 1 },
+  eulaSupportBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.bgInput,
+    borderRadius: RADIUS.sm, padding: 12, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  eulaSupportText: { color: COLORS.textMuted, fontSize: 12, flex: 1 },
+  eulaAgreeButton: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.accentCyan, borderRadius: RADIUS.md, paddingVertical: 14,
+  },
+  eulaAgreeButtonText: { color: COLORS.bgPrimary, fontSize: 14, fontWeight: '900' },
+  userActionCard: {
+    width: '100%', maxWidth: 400, backgroundColor: COLORS.bgElevated,
+    borderRadius: RADIUS.xl, padding: 18, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  userActionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  userActionAvatar: {
+    width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.bgInput,
+    borderWidth: 1, borderColor: COLORS.borderHighlight, alignItems: 'center', justifyContent: 'center',
+  },
+  userActionAvatarText: { color: COLORS.white, fontSize: 16, fontWeight: '900' },
+  userActionTitle: { color: COLORS.white, fontSize: 16, fontWeight: '900' },
+  userActionSubtitle: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  userActionButtonsContainer: { gap: 10 },
+  userActionBlockBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.dangerRedSoft,
+    borderRadius: RADIUS.md, padding: 13, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  actionBtnIconBoxBlock: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(239, 68, 68, 0.18)', alignItems: 'center', justifyContent: 'center',
+  },
+  actionBtnTitleBlock: { color: COLORS.dangerRed, fontSize: 14, fontWeight: '800' },
+  userActionReportBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.rxAmberSoft,
+    borderRadius: RADIUS.md, padding: 13, borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.35)',
+  },
+  actionBtnIconBoxReport: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(245, 158, 11, 0.18)', alignItems: 'center', justifyContent: 'center',
+  },
+  actionBtnTitleReport: { color: COLORS.rxAmberBright, fontSize: 14, fontWeight: '800' },
+  actionBtnSub: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
+  userActionCancelBtn: { width: '100%', paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  userActionCancelBtnText: { color: COLORS.textMuted, fontSize: 14, fontWeight: '700' },
+  reportReasonsContainer: { gap: 8 },
+  reportSubtitleInfo: { color: COLORS.textMuted, fontSize: 12, lineHeight: 17, marginBottom: 6 },
+  reportReasonRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.bgInput,
+    borderRadius: RADIUS.sm, padding: 12, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  reportReasonText: { color: COLORS.white, fontSize: 13, fontWeight: '700', flex: 1 },
+  reportBackBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginTop: 4 },
+  reportBackBtnText: { color: COLORS.textMuted, fontSize: 13, fontWeight: '700' },
+  blockedUserRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bgInput,
+    borderRadius: RADIUS.sm, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  blockedUserNameText: { color: COLORS.white, fontSize: 14, fontWeight: '700' },
+  unblockBtn: { backgroundColor: COLORS.accentCyanSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: RADIUS.xs },
+  unblockBtnText: { color: COLORS.accentCyan, fontSize: 12, fontWeight: '800' },
+};

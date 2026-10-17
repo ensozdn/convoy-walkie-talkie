@@ -1,110 +1,149 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { styles } from '../styles/styles';
 import { Ionicons } from '@expo/vector-icons';
+import { styles } from '../styles/styles';
+import { COLORS } from '../styles/theme';
+import { formatDriverDistance, formatDriverSpeed } from '../utils/geo';
+import { QuickPttDock } from '../components/QuickPttDock';
 
-export function DriversTab({ t, visibleParticipants, lang, activeSpeaker, handleTabPress, mapRef, setSelectedUserForAction, setUserActionStep }) {
+export function DriversTab({
+  t,
+  roomCode,
+  connectionState,
+  isSpeakingLocally,
+  handleTalkStart,
+  handleTalkEnd,
+  userLocation,
+  visibleParticipants,
+  activeSpeaker,
+  handleTabPress,
+  mapRef,
+  setSelectedUserForAction,
+  setUserActionStep,
+}) {
   return (
-    <View style={styles.fullScreenTabContainer}>
-      <View style={styles.tabHeaderRow}>
-        <View style={styles.tabTitleWrapper}>
-          <Ionicons name="people" size={20} color="#38bdf8" />
-          <Text style={styles.tabTitleText}>{t('tabDrivers')}</Text>
-        </View>
-        <View style={styles.driverCountBadge}>
-          <Ionicons name="radio" size={12} color="#38bdf8" />
-          <Text style={styles.driverCountText}>{t('people', visibleParticipants.length)}</Text>
-        </View>
-      </View>
-
-      <ScrollView
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-        contentContainerStyle={{ paddingBottom: 8 }}
-      >
-        {visibleParticipants.length === 0 ? (
-          <View style={styles.emptyDriversContainer}>
-            <Ionicons name="people-outline" size={48} color="#334155" />
-            <Text style={styles.emptyDriversText}>
-              {lang === 'tr' ? 'Henüz konvoya kimse katılmadı' : 'No drivers in convoy yet'}
-            </Text>
+    <View style={{ flex: 1 }}>
+      <View style={styles.fullScreenTabContainer}>
+        <View style={styles.tabHeaderRow}>
+          <View style={styles.tabTitleWrapper}>
+            <Ionicons name="people" size={20} color={COLORS.accentCyan} />
+            <Text style={styles.tabTitleText}>{t('tabDrivers')}</Text>
           </View>
-        ) : (
-          visibleParticipants.map((p) => {
-            const isSpeaking = activeSpeaker && activeSpeaker.name === p.name;
-            return (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.driverCard, isSpeaking && styles.driverCardSpeaking]}
-                onPress={() => {
-                  if (p.coords) {
-                    handleTabPress('map');
-                    setTimeout(() => {
-                      mapRef.current?.animateToRegion({
-                        latitude: p.coords.latitude,
-                        longitude: p.coords.longitude,
-                        latitudeDelta: 0.005,
-                        longitudeDelta: 0.005,
-                      }, 600);
-                    }, 300);
-                  }
-                }}
-                activeOpacity={p.coords ? 0.75 : 1}
-              >
-                <View style={[styles.driverAvatarLarge, isSpeaking && styles.driverAvatarLargeSpeaking]}>
-                  {isSpeaking ? (
-                    <Ionicons name="volume-high" size={22} color="#ffffff" />
-                  ) : (
-                    <Text style={styles.driverAvatarText}>{p.name.charAt(0).toUpperCase()}</Text>
-                  )}
-                </View>
-                <View style={styles.driverInfo}>
-                  <View style={styles.driverNameRow}>
-                    <Text style={[styles.driverNameText, isSpeaking && styles.driverNameTextSpeaking]}>
-                      {p.name}
-                    </Text>
-                    {p.isLocal && (
-                      <View style={styles.youBadge}>
-                        <Text style={styles.youBadgeText}>{t('you')}</Text>
-                      </View>
+          <View style={styles.driverCountBadge}>
+            <Ionicons name="radio" size={12} color={COLORS.accentCyan} />
+            <Text style={styles.driverCountText}>{t('people', visibleParticipants.length)}</Text>
+          </View>
+        </View>
+
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          contentContainerStyle={{ paddingBottom: 8 }}
+        >
+          {visibleParticipants.length === 0 ? (
+            <View style={styles.emptyDriversContainer}>
+              <Ionicons name="people-outline" size={48} color={COLORS.borderDefault} />
+              <Text style={styles.emptyDriversText}>{t('emptyDrivers')}</Text>
+            </View>
+          ) : (
+            visibleParticipants.map((p) => {
+              const isSpeaking = Boolean(activeSpeaker && activeSpeaker.name === p.name);
+              const distanceLabel = formatDriverDistance(userLocation, p.coords, p.isLocal);
+              const speedLabel = formatDriverSpeed(p.coords);
+              const telemetryLabel = [distanceLabel, speedLabel].filter(Boolean).join(' • ');
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.driverCard, isSpeaking && styles.driverCardSpeaking]}
+                  onPress={() => {
+                    if (p.coords) {
+                      handleTabPress('map');
+                      setTimeout(() => {
+                        mapRef.current?.animateToRegion(
+                          {
+                            latitude: p.coords.latitude,
+                            longitude: p.coords.longitude,
+                            latitudeDelta: 0.005,
+                            longitudeDelta: 0.005,
+                          },
+                          600
+                        );
+                      }, 300);
+                    }
+                  }}
+                  activeOpacity={p.coords ? 0.75 : 1}
+                >
+                  <View style={[styles.driverAvatarLarge, isSpeaking && styles.driverAvatarLargeSpeaking]}>
+                    {isSpeaking ? (
+                      <Ionicons name="volume-high" size={22} color={COLORS.white} />
+                    ) : (
+                      <Text style={styles.driverAvatarText}>{p.name.charAt(0).toUpperCase()}</Text>
                     )}
                   </View>
-                  <View style={styles.driverStatusRow}>
-                    <View style={[styles.driverStatusDot, isSpeaking && styles.driverStatusDotSpeaking]} />
-                    <Text style={[styles.driverStatusText, isSpeaking && styles.driverStatusTextSpeaking]}>
-                      {isSpeaking
-                        ? (lang === 'tr' ? 'Konuşuyor' : 'Speaking')
-                        : (lang === 'tr' ? 'Dinliyor' : 'Listening')}
-                    </Text>
-                  </View>
-                </View>
 
-                {/* UGC: Diğer kullanıcılar için Moderasyon Seçenek Butonu */}
-                {!p.isLocal && (
-                  <TouchableOpacity
-                    style={styles.driverMoreBtn}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      setSelectedUserForAction(p);
-                      setUserActionStep('menu');
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="ellipsis-vertical" size={18} color="#94a3b8" />
-                  </TouchableOpacity>
-                )}
+                  <View style={styles.driverInfo}>
+                    <View style={styles.driverNameRow}>
+                      <Text style={[styles.driverNameText, isSpeaking && styles.driverNameTextSpeaking]}>
+                        {p.name}
+                      </Text>
+                      {p.isLeader && (
+                        <View style={styles.leaderBadge}>
+                          <Ionicons name="star" size={9} color={COLORS.rxAmberBright} />
+                          <Text style={styles.leaderBadgeText}>{t('leader')}</Text>
+                        </View>
+                      )}
+                      {p.isLocal && (
+                        <View style={styles.youBadge}>
+                          <Text style={styles.youBadgeText}>{t('you')}</Text>
+                        </View>
+                      )}
+                    </View>
 
-                {p.coords && (
-                  <View style={styles.driverMapIconWrapper}>
-                    <Ionicons name="locate-outline" size={18} color="#38bdf8" />
+                    <View style={styles.driverStatusRow}>
+                      <View style={[styles.driverStatusDot, isSpeaking && styles.driverStatusDotSpeaking]} />
+                      <Text style={[styles.driverStatusText, isSpeaking && styles.driverStatusTextSpeaking]}>
+                        {isSpeaking ? t('speakingStatus') : t('listeningStatus')}
+                      </Text>
+                    </View>
                   </View>
-                )}
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
+
+                  {telemetryLabel ? (
+                    <View style={styles.driverDistancePill}>
+                      <Ionicons name="navigate-outline" size={12} color={COLORS.accentCyan} />
+                      <Text style={styles.driverDistanceText}>{telemetryLabel}</Text>
+                    </View>
+                  ) : null}
+
+                  {!p.isLocal && (
+                    <TouchableOpacity
+                      style={styles.driverMoreBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        setSelectedUserForAction(p);
+                        setUserActionStep('menu');
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="ellipsis-vertical" size={16} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+
+      <QuickPttDock
+        roomCode={roomCode}
+        connectionState={connectionState}
+        activeSpeaker={activeSpeaker}
+        isSpeakingLocally={isSpeakingLocally}
+        handleTalkStart={handleTalkStart}
+        handleTalkEnd={handleTalkEnd}
+        t={t}
+      />
     </View>
   );
 }

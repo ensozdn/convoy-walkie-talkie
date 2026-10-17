@@ -1,16 +1,27 @@
-import { OnModuleDestroy } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
+import { Coordinates, QuickPingType } from './room-registry';
+export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy {
     server: Server;
+    private readonly registry;
     private readonly speakerLock;
+    private sweepTimer;
+    onModuleInit(): void;
     onModuleDestroy(): void;
     handleConnection(client: Socket): void;
     handleDisconnect(client: Socket): void;
     handleJoinRoom(client: Socket, payload: {
         roomName: string;
         participantName: string;
-        coords?: any;
+        coords?: Coordinates;
+    }): {
+        success: boolean;
+    };
+    handleHeartbeat(client: Socket, payload: {
+        roomName: string;
+        participantName: string;
+        coords?: Coordinates;
     }): {
         success: boolean;
     };
@@ -25,7 +36,7 @@ export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisc
         roomName: string;
         participantName: string;
     }): void;
-    handlePttStop(payload: {
+    handlePttStop(client: Socket, payload: {
         roomName: string;
         participantName: string;
     }): void;
@@ -45,7 +56,33 @@ export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisc
     handleLocationUpdate(client: Socket, payload: {
         roomName: string;
         participantName: string;
-        coords: any;
+        coords: Coordinates;
     }): void;
+    handleQuickPing(client: Socket, payload: {
+        roomName: string;
+        sender: string;
+        pingType: QuickPingType;
+    }): {
+        success: boolean;
+        pingId?: undefined;
+    } | {
+        success: boolean;
+        pingId: number;
+    };
+    handleSetWaypoint(client: Socket, payload: {
+        roomName: string;
+        participantName: string;
+        coords: {
+            latitude: number;
+            longitude: number;
+        } | null;
+    }): {
+        success: boolean;
+        waypoint?: undefined;
+    } | {
+        success: boolean;
+        waypoint: import("./room-registry").RoomWaypoint | null;
+    };
+    private sweepStaleParticipants;
     private broadcastRoomState;
 }

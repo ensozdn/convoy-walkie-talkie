@@ -1,13 +1,42 @@
 import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, TextInput } from 'react-native';
-import { styles } from '../styles/styles';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
+import { styles } from '../styles/styles';
+import { COLORS } from '../styles/theme';
 import { MiniLangSelector } from '../components/LangSelectors';
 
-export function SettingsTab({ lang, changeLanguage, isEditingName, username, setEditingName, setIsEditingName, editingName, handleSaveName, rogerBeep, setRogerBeep, rogerBeepRef, playBeepOff, t, setIsEulaFromSettings, setShowEulaModal, triggerToast, setShowBlockedUsersModal, blockedUsers, setShowGuide }) {
+export function SettingsTab({
+  lang, changeLanguage, isEditingName, username, setEditingName, setIsEditingName,
+  editingName, handleSaveName, rogerBeep, setRogerBeep, rogerBeepRef, playBeepOff,
+  t, setIsEulaFromSettings, setShowEulaModal, triggerToast, setShowBlockedUsersModal,
+  blockedUsers, setShowGuide,
+}) {
+  const handleToggleRogerBeep = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const nextVal = !rogerBeep;
+    setRogerBeep(nextVal);
+    rogerBeepRef.current = nextVal;
+    try {
+      await AsyncStorage.setItem('@convoy_roger_beep', JSON.stringify(nextVal));
+    } catch (e) {
+      console.error('[SETTINGS] Roger beep tercihi kaydedilemedi:', e.message);
+    }
+    if (nextVal) playBeepOff();
+  };
+
+  const handleCopySupportMail = async () => {
+    await Clipboard.setStringAsync('support@tripnoute.com');
+    triggerToast(t('toastSupportCopied'));
+  };
+
+  const openEulaModal = () => {
+    setIsEulaFromSettings(true);
+    setShowEulaModal(true);
+  };
+
   return (
     <ScrollView
       style={{ flex: 1 }}
@@ -17,25 +46,23 @@ export function SettingsTab({ lang, changeLanguage, isEditingName, username, set
     >
       <View style={styles.tabHeaderRow}>
         <View style={styles.tabTitleWrapper}>
-          <Ionicons name="settings" size={20} color="#38bdf8" />
-          <Text style={styles.tabTitleText}>{lang === 'tr' ? 'Ayarlar' : 'Settings'}</Text>
+          <Ionicons name="settings" size={20} color={COLORS.accentCyan} />
+          <Text style={styles.tabTitleText}>{t('settingsTitle')}</Text>
         </View>
         <MiniLangSelector lang={lang} changeLanguage={changeLanguage} />
       </View>
 
       <View style={styles.settingsSection}>
-        <Text style={styles.settingsSectionLabel}>{lang === 'tr' ? 'PROFİL' : 'PROFILE'}</Text>
+        <Text style={styles.settingsSectionLabel}>{t('profileSection')}</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingsRow}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="person" size={18} color="#38bdf8" />
+                <Ionicons name="person" size={18} color={COLORS.accentCyan} />
               </View>
               <View>
-                <Text style={styles.settingsRowTitle}>{lang === 'tr' ? 'Sürücü Adı' : 'Driver Name'}</Text>
-                {!isEditingName && (
-                  <Text style={styles.settingsRowSub}>{username || '—'}</Text>
-                )}
+                <Text style={styles.settingsRowTitle}>{t('driverNameLabel')}</Text>
+                {!isEditingName && <Text style={styles.settingsRowSub}>{username || '—'}</Text>}
               </View>
             </View>
             {!isEditingName && (
@@ -47,7 +74,7 @@ export function SettingsTab({ lang, changeLanguage, isEditingName, username, set
                 }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="pencil" size={14} color="#38bdf8" />
+                <Ionicons name="pencil" size={14} color={COLORS.accentCyan} />
               </TouchableOpacity>
             )}
           </View>
@@ -61,18 +88,18 @@ export function SettingsTab({ lang, changeLanguage, isEditingName, username, set
                 autoCapitalize="words"
                 returnKeyType="done"
                 onSubmitEditing={handleSaveName}
-                placeholderTextColor="#64748b"
-                placeholder={lang === 'tr' ? 'Yeni isim gir' : 'Enter new name'}
+                placeholderTextColor={COLORS.textDim}
+                placeholder={t('enterNewName')}
               />
               <TouchableOpacity style={styles.nameSaveBtn} onPress={handleSaveName} activeOpacity={0.85}>
-                <Ionicons name="checkmark" size={18} color="#0f172a" />
+                <Ionicons name="checkmark" size={18} color={COLORS.bgPrimary} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.nameCancelBtn}
                 onPress={() => setIsEditingName(false)}
                 activeOpacity={0.85}
               >
-                <Ionicons name="close" size={18} color="#64748b" />
+                <Ionicons name="close" size={18} color={COLORS.textMuted} />
               </TouchableOpacity>
             </View>
           )}
@@ -80,34 +107,21 @@ export function SettingsTab({ lang, changeLanguage, isEditingName, username, set
       </View>
 
       <View style={styles.settingsSection}>
-        <Text style={styles.settingsSectionLabel}>{lang === 'tr' ? 'SES' : 'AUDIO'}</Text>
+        <Text style={styles.settingsSectionLabel}>{t('audioSection')}</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingsRow}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="radio" size={18} color="#38bdf8" />
+                <Ionicons name="radio" size={18} color={COLORS.accentCyan} />
               </View>
               <View>
-                <Text style={styles.settingsRowTitle}>Roger Beep</Text>
-                <Text style={styles.settingsRowSub}>
-                  {lang === 'tr' ? 'Telsiz kapanış bipi' : 'Radio end-of-transmission beep'}
-                </Text>
+                <Text style={styles.settingsRowTitle}>{t('rogerBeepTitle')}</Text>
+                <Text style={styles.settingsRowSub}>{t('rogerBeepSub')}</Text>
               </View>
             </View>
             <TouchableOpacity
               style={[styles.toggleTrack, rogerBeep && styles.toggleTrackOn]}
-              onPress={async () => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                const nextVal = !rogerBeep;
-                setRogerBeep(nextVal);
-                rogerBeepRef.current = nextVal;
-                try {
-                  await AsyncStorage.setItem('@convoy_roger_beep', JSON.stringify(nextVal));
-                } catch (e) {
-                  console.error('[SETTINGS] Roger beep tercihi kaydedilemedi:', e.message);
-                }
-                if (nextVal) playBeepOff();
-              }}
+              onPress={handleToggleRogerBeep}
               activeOpacity={0.85}
             >
               <View style={[styles.toggleThumb, rogerBeep && styles.toggleThumbOn]} />
@@ -116,123 +130,97 @@ export function SettingsTab({ lang, changeLanguage, isEditingName, username, set
         </View>
       </View>
 
-      {/* Apple UGC: Güvenlik ve Yasal Bölümü */}
       <View style={styles.settingsSection}>
         <Text style={styles.settingsSectionLabel}>{t('safetyLegalSection')}</Text>
         <View style={styles.settingsCard}>
-          {/* EULA Row */}
-          <TouchableOpacity
-            style={styles.settingsRow}
-            onPress={() => {
-              setIsEulaFromSettings(true);
-              setShowEulaModal(true);
-            }}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.settingsRow} onPress={openEulaModal} activeOpacity={0.8}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="document-text" size={18} color="#38bdf8" />
+                <Ionicons name="document-text" size={18} color={COLORS.accentCyan} />
               </View>
               <View>
                 <Text style={styles.settingsRowTitle}>{t('termsOfUse')}</Text>
                 <Text style={styles.settingsRowSub}>{t('termsOfUseSub')}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#475569" />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textDim} />
           </TouchableOpacity>
 
-          {/* Community Guidelines Row */}
-          <TouchableOpacity
-            style={[styles.settingsRow, { borderTopWidth: 1, borderTopColor: '#1e293b' }]}
-            onPress={() => {
-              setIsEulaFromSettings(true);
-              setShowEulaModal(true);
-            }}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={[styles.settingsRow, styles.settingsRowDivider]} onPress={openEulaModal} activeOpacity={0.8}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="shield-checkmark" size={18} color="#22c55e" />
+                <Ionicons name="shield-checkmark" size={18} color={COLORS.txGreenBright} />
               </View>
               <View>
                 <Text style={styles.settingsRowTitle}>{t('communityGuidelines')}</Text>
                 <Text style={styles.settingsRowSub}>{t('communityGuidelinesSub')}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#475569" />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textDim} />
           </TouchableOpacity>
 
-          {/* Support & Abuse Reporting Mail */}
           <TouchableOpacity
-            style={[styles.settingsRow, { borderTopWidth: 1, borderTopColor: '#1e293b' }]}
-            onPress={async () => {
-              await Clipboard.setStringAsync('support@tripnoute.com');
-              triggerToast(lang === 'tr' ? 'Destek e-postası kopyalandı: support@tripnoute.com' : 'Support email copied: support@tripnoute.com');
-            }}
+            style={[styles.settingsRow, styles.settingsRowDivider]}
+            onPress={handleCopySupportMail}
             activeOpacity={0.8}
           >
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="mail" size={18} color="#f59e0b" />
+                <Ionicons name="mail" size={18} color={COLORS.rxAmberBright} />
               </View>
               <View>
                 <Text style={styles.settingsRowTitle}>{t('supportMail')}</Text>
-                <Text style={[styles.settingsRowSub, { color: '#38bdf8' }]}>support@tripnoute.com</Text>
+                <Text style={[styles.settingsRowSub, { color: COLORS.accentCyan }]}>{t('supportMailSub')}</Text>
               </View>
             </View>
-            <Ionicons name="copy-outline" size={16} color="#64748b" />
+            <Ionicons name="copy-outline" size={16} color={COLORS.textMuted} />
           </TouchableOpacity>
 
-          {/* Blocked Drivers Management */}
           <TouchableOpacity
-            style={[styles.settingsRow, { borderTopWidth: 1, borderTopColor: '#1e293b' }]}
+            style={[styles.settingsRow, styles.settingsRowDivider]}
             onPress={() => setShowBlockedUsersModal(true)}
             activeOpacity={0.8}
           >
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="ban" size={18} color="#ef4444" />
+                <Ionicons name="ban" size={18} color={COLORS.dangerRed} />
               </View>
               <View>
                 <Text style={styles.settingsRowTitle}>{t('blockedUsersTitle')}</Text>
                 <Text style={styles.settingsRowSub}>{t('blockedUsersCount', blockedUsers.length)}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#475569" />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textDim} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.settingsSection}>
-        <Text style={styles.settingsSectionLabel}>{lang === 'tr' ? 'YARDIM' : 'HELP'}</Text>
+        <Text style={styles.settingsSectionLabel}>{t('helpSection')}</Text>
         <View style={styles.settingsCard}>
-          <TouchableOpacity
-            style={styles.settingsRow}
-            onPress={() => setShowGuide(true)}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity style={styles.settingsRow} onPress={() => setShowGuide(true)} activeOpacity={0.8}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="help-circle" size={18} color="#38bdf8" />
+                <Ionicons name="help-circle" size={18} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.settingsRowTitle}>{lang === 'tr' ? 'Kullanım Rehberi' : 'How to Use'}</Text>
+              <Text style={styles.settingsRowTitle}>{t('guideTitle')}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#475569" />
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textDim} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.settingsSection}>
-        <Text style={styles.settingsSectionLabel}>{lang === 'tr' ? 'UYGULAMA' : 'APP'}</Text>
+        <Text style={styles.settingsSectionLabel}>{t('appSection')}</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingsRow}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.settingsIconBox}>
-                <Ionicons name="information-circle" size={18} color="#38bdf8" />
+                <Ionicons name="information-circle" size={18} color={COLORS.accentCyan} />
               </View>
               <View>
-                <Text style={styles.settingsRowTitle}>Konvoy Telsiz</Text>
-                <Text style={styles.settingsRowSub}>v1.0.0 (Build 9) — Professional PTT</Text>
+                <Text style={styles.settingsRowTitle}>{t('title')}</Text>
+                <Text style={styles.settingsRowSub}>{t('appVersionSub')}</Text>
               </View>
             </View>
           </View>
