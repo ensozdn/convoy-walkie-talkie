@@ -285,6 +285,7 @@ export default function App() {
             {...prefs} isEditingName={isEditingName} setEditingName={setEditingName}
             setIsEditingName={setIsEditingName} editingName={editingName}
             handleSaveName={handleSaveName} playBeepOff={playBeepOff} ads={ads}
+            driveSession={driveSession}
           />
         </View>
       </Animated.View>

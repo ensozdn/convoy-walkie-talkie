@@ -36,6 +36,13 @@ export const SettingsTab = React.memo(function SettingsTab({
     triggerToast(t('toastSupportCopied'));
   };
 
+  const handleToggleDriveSummary = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (typeof driveSession?.toggleSummaryEnabled === 'function') {
+      driveSession.toggleSummaryEnabled();
+    }
+  };
+
   const openEulaModal = () => {
     setIsEulaFromSettings(true);
     setShowEulaModal(true);
@@ -161,7 +168,7 @@ export const SettingsTab = React.memo(function SettingsTab({
             </View>
             <TouchableOpacity
               style={[styles.toggleTrack, driveSession?.isSummaryEnabled && styles.toggleTrackOn]}
-              onPress={driveSession?.toggleSummaryEnabled}
+              onPress={handleToggleDriveSummary}
               activeOpacity={0.85}
             >
               <View style={[styles.toggleThumb, driveSession?.isSummaryEnabled && styles.toggleThumbOn]} />
