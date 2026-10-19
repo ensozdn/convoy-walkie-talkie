@@ -28,7 +28,7 @@
           "location"
         ],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserTrackingUsageDescription": "Bu izin, sizlere sürüş deneyiminizi kesintiye uğratmayacak sponsorlu içerikler sunabilmek için kullanılır."
+        "NSUserTrackingUsageDescription": "Bu izin, sizlere ilgi alanlarınıza uygun kişiselleştirilmiş reklamlar sunabilmek için kullanılır."
       }
     },
     "android": {
@@ -67,7 +67,7 @@
         {
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-3940256099942544~1458002511",
-          "userTrackingUsageDescription": "Bu izin, sizlere sürüş deneyiminizi kesintiye uğratmayacak sponsorlu içerikler sunabilmek için kullanılır."
+          "userTrackingUsageDescription": "Bu izin, sizlere ilgi alanlarınıza uygun kişiselleştirilmiş reklamlar sunabilmek için kullanılır."
         }
       ]
     ],
