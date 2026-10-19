@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { PROVIDER_DEFAULT, Marker } from 'react-native-maps';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
-import { formatDriverDistance, formatDriverSpeed } from '../utils/geo';
+import { formatDriverDistance } from '../utils/geo';
+import { PingAlertBanner } from '../components/PingAlertBanner';
+import { ConvoyAvatarStrip } from '../components/ConvoyAvatarStrip';
 
 const QUICK_PING_ITEMS = [
   { type: 'break', labelKey: 'pingBreak', icon: 'cafe-outline', color: COLORS.accentCyan },
@@ -12,13 +14,6 @@ const QUICK_PING_ITEMS = [
   { type: 'hazard', labelKey: 'pingHazard', icon: 'warning-outline', color: COLORS.dangerRed },
   { type: 'ok', labelKey: 'pingOk', icon: 'checkmark-circle-outline', color: COLORS.txGreenBright },
 ];
-
-const PING_ALERT_KEYS = {
-  break: 'pingAlertBreak',
-  slow: 'pingAlertSlow',
-  hazard: 'pingAlertHazard',
-  ok: 'pingAlertOk',
-};
 
 const SIGNAL_BAR_HEIGHTS = [7, 13, 18, 11, 15];
 
@@ -73,11 +68,12 @@ function resolveRadioVisualState({ connectionState, activeSpeaker, isSpeakingLoc
   };
 }
 
-export function RadioTab({
+export const RadioTab = React.memo(function RadioTab({
   connectionState, activeSpeaker, t, isSpeakingLocally, isChannelMuted, handleToggleMute,
   roomCode, handleCopyRoomCode, visibleParticipants, confirmLeaveRoom,
   setSelectedUserForAction, setUserActionStep, userLocation, pulseAnim,
   handleTalkStart, handleTalkEnd, activePing, sendQuickPing, waypoint, handleTabPress,
+  onOpenAvatarModal,
 }) {
   const isConnected = connectionState === 'connected';
   const someoneElseSpeaking = Boolean(activeSpeaker && !activeSpeaker.isLocal);
@@ -162,63 +158,17 @@ export function RadioTab({
         </View>
       </View>
 
-      {activePing && (
-        <View style={styles.pingAlertBanner}>
-          <Ionicons name="radio" size={16} color={COLORS.rxAmberBright} />
-          <Text style={styles.pingAlertText} numberOfLines={1}>
-            {activePing.sender.toUpperCase()} — {t(PING_ALERT_KEYS[activePing.pingType] || 'pingAlertOk')}
-          </Text>
-        </View>
-      )}
+      <PingAlertBanner activePing={activePing} t={t} />
 
-      <View style={styles.convoyStripSection}>
-        <View style={styles.sectionMicroHeader}>
-          <Text style={styles.sectionMicroTitle}>{t('convoyStripTitle')}</Text>
-          <Text style={styles.sectionMicroTitle}>{t('people', visibleParticipants.length)}</Text>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.convoyStripScroll}>
-          {visibleParticipants.map((p) => {
-            const isSpeaking = Boolean(activeSpeaker && activeSpeaker.name === p.name);
-            const distanceLabel = formatDriverDistance(userLocation, p.coords, p.isLocal);
-            const speedLabel = formatDriverSpeed(p.coords);
-            const subLabel = p.isLocal
-              ? speedLabel ? `${t('you')} • ${speedLabel}` : t('you')
-              : [distanceLabel, speedLabel].filter(Boolean).join(' • ') || t('connected');
-            return (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.participantChip, isSpeaking && styles.participantChipSpeaking]}
-                onPress={() => {
-                  if (!p.isLocal) {
-                    setSelectedUserForAction(p);
-                    setUserActionStep('menu');
-                  }
-                }}
-                activeOpacity={p.isLocal ? 1 : 0.75}
-              >
-                <View style={[styles.avatarBadge, isSpeaking && styles.avatarBadgeSpeaking]}>
-                  {isSpeaking ? (
-                    <Ionicons name="volume-high" size={14} color={COLORS.white} />
-                  ) : (
-                    <Text style={styles.avatarBadgeText}>{p.name.charAt(0).toUpperCase()}</Text>
-                  )}
-                </View>
-                <View style={styles.chipMetaCol}>
-                  <View style={styles.chipNameRow}>
-                    <Text style={styles.chipText} numberOfLines={1}>{p.name}</Text>
-                    {p.isLeader && (
-                      <View style={styles.leaderMiniBadge}>
-                        <Text style={styles.leaderMiniBadgeText}>{t('leader')}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.chipDistanceText}>{subLabel}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <ConvoyAvatarStrip
+        visibleParticipants={visibleParticipants}
+        activeSpeaker={activeSpeaker}
+        t={t}
+        setSelectedUserForAction={setSelectedUserForAction}
+        setUserActionStep={setUserActionStep}
+        handleTabPress={handleTabPress}
+        onOpenAvatarModal={onOpenAvatarModal}
+      />
 
       <View style={styles.radioMiniMapCard}>
         <View style={styles.radioMiniMapHeader}>
@@ -236,7 +186,7 @@ export function RadioTab({
         <MapView
           style={styles.radioMiniMapView}
           provider={PROVIDER_DEFAULT}
-          region={userLocation}
+          initialRegion={userLocation}
           showsUserLocation={true}
           showsMyLocationButton={false}
           pitchEnabled={false}
@@ -284,7 +234,7 @@ export function RadioTab({
       </View>
     </View>
   );
-}
+});
 
 
 

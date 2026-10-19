@@ -89,4 +89,19 @@ export const ugcModalStyles = {
   blockedUserNameText: { color: COLORS.white, fontSize: 14, fontWeight: '700' },
   unblockBtn: { backgroundColor: COLORS.accentCyanSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: RADIUS.xs },
   unblockBtnText: { color: COLORS.accentCyan, fontSize: 12, fontWeight: '800' },
+  blockedModalCloseBtn: {
+    width: '100%',
+    backgroundColor: COLORS.accentCyan,
+    borderRadius: RADIUS.md,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+  },
+  blockedModalCloseBtnText: {
+    color: COLORS.bgPrimary,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
 };

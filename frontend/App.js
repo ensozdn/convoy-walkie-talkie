@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Text, View, SafeAreaView, StatusBar, Alert, Keyboard, Share, Animated, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -12,6 +12,7 @@ import { useRoomSocket } from './src/hooks/useRoomSocket';
 import { useConvoyPreferences } from './src/hooks/useConvoyPreferences';
 import { useUIAnimations } from './src/hooks/useUIAnimations';
 import { GuideModal, EulaModal, UserActionModal, BlockedUsersModal } from './src/components/Modals';
+import { AvatarCustomizationModal } from './src/components/AvatarCustomizationModal';
 import { Toast } from './src/components/Toast';
 import { BottomTabBar } from './src/components/BottomTabBar';
 import { MapTab } from './src/screens/MapTab';
@@ -36,14 +37,9 @@ export default function App() {
   const [activeSpeaker, setActiveSpeaker] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
-
-  const mapRef = useRef(null);
-  const roomCodeRef = useRef('');
-  const usernameRef = useRef('');
-  const socketRef = useRef(null);
-  const copyTimerRef = useRef(null);
-  const blockedUsersRefProxy = useRef([]);
-  const rogerBeepRefProxy = useRef(true);
+  const mapRef = useRef(null), roomCodeRef = useRef(''), usernameRef = useRef('');
+  const socketRef = useRef(null), copyTimerRef = useRef(null);
+  const blockedUsersRefProxy = useRef([]), rogerBeepRefProxy = useRef(true);
 
   useKeepAwake(isInRoom ? 'room-active' : undefined);
 
@@ -75,6 +71,7 @@ export default function App() {
   } = useRoomSocket({
     socketRef, roomCodeRef, usernameRef, blockedUsersRef: prefs.blockedUsersRef,
     userLocation, setActiveSpeaker, playIncoming,
+    avatarColor: prefs.avatarColor, vehicleType: prefs.vehicleType,
   });
 
   const {
@@ -167,11 +164,13 @@ export default function App() {
     ]);
   };
 
-  const rawVisible = participants.filter((p) => !prefs.blockedUsers.includes(p.name));
+  const rawVisible = participants
+    .filter((p) => !prefs.blockedUsers.includes(p.name))
+    .map((p) => (p.isLocal ? { ...p, avatarColor: prefs.avatarColor || p.avatarColor, vehicleType: prefs.vehicleType || p.vehicleType } : p));
   const localDisplayName = username || usernameRef.current || t('you');
   const visibleParticipants = rawVisible.length > 0
     ? rawVisible
-    : [{ id: 'local-self', name: localDisplayName, coords: userLocation, isLocal: true, isLeader: true }];
+    : [{ id: 'local-self', name: localDisplayName, coords: userLocation, isLocal: true, isLeader: true, avatarColor: prefs.avatarColor, vehicleType: prefs.vehicleType }];
   const effectiveLeaderName = leaderName || visibleParticipants.find((p) => p.isLeader)?.name || localDisplayName;
 
   const handleRecenter = () => {
@@ -214,6 +213,20 @@ export default function App() {
     Keyboard.dismiss();
   };
 
+  const sharedTabProps = useMemo(() => ({
+    t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
+    userLocation, visibleParticipants, activeSpeaker, mapRef, mapType, setMapType,
+    isFollowing, setIsFollowing, handleFitAll, handleRecenter,
+    leaderName: effectiveLeaderName, username: localDisplayName, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
+    setSelectedUserForAction: prefs.setSelectedUserForAction, setUserActionStep: prefs.setUserActionStep,
+    onOpenAvatarModal: () => prefs.setShowAvatarModal(true),
+  }), [
+    t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
+    userLocation, visibleParticipants, activeSpeaker, mapType,
+    isFollowing, effectiveLeaderName, localDisplayName, waypoint,
+    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal,
+  ]);
+
   const modalOverlays = (
     <>
       <Image source={LOGO_BADGE} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} fadeDuration={0} />
@@ -221,6 +234,11 @@ export default function App() {
       <EulaModal {...prefs} t={t} />
       <UserActionModal {...prefs} t={t} />
       <BlockedUsersModal {...prefs} t={t} />
+      <AvatarCustomizationModal
+        visible={prefs.showAvatarModal} onClose={() => prefs.setShowAvatarModal(false)}
+        onSave={prefs.handleUpdateAvatarProfile} currentColor={prefs.avatarColor}
+        currentVehicle={prefs.vehicleType} username={localDisplayName} t={t}
+      />
       <Toast toastMessage={prefs.toastMessage} toastAnim={prefs.toastAnim} />
     </>
   );
@@ -241,14 +259,6 @@ export default function App() {
     );
   }
 
-  const sharedTabProps = {
-    t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
-    userLocation, visibleParticipants, activeSpeaker, mapRef, mapType, setMapType,
-    isFollowing, setIsFollowing, handleFitAll, handleRecenter,
-    leaderName: effectiveLeaderName, username: localDisplayName, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
-    setSelectedUserForAction: prefs.setSelectedUserForAction, setUserActionStep: prefs.setUserActionStep,
-  };
-
   return (
     <View style={styles.container}>
       <SafeAreaView style={{ backgroundColor: COLORS.bgPrimary }} />
@@ -259,7 +269,7 @@ export default function App() {
         </View>
       )}
       <Animated.View style={{ flex: 1, width: '100%', opacity: tabFadeAnim }}>
-        <View style={{ flex: 1, display: activeTab === 'radio' ? 'flex' : 'none' }}>
+        <View style={[styles.tabScreenContainer, activeTab === 'radio' ? styles.tabScreenActive : styles.tabScreenHidden]} pointerEvents={activeTab === 'radio' ? 'auto' : 'none'}>
           <RadioTab
             {...sharedTabProps} isChannelMuted={isChannelMuted} handleToggleMute={handleToggleMute}
             handleCopyRoomCode={handleCopyRoomCode} confirmLeaveRoom={confirmLeaveRoom}
@@ -267,13 +277,13 @@ export default function App() {
             handleTabPress={handleTabPress}
           />
         </View>
-        <View style={{ flex: 1, display: activeTab === 'map' ? 'flex' : 'none' }}>
+        <View style={[styles.tabScreenContainer, activeTab === 'map' ? styles.tabScreenActive : styles.tabScreenHidden]} pointerEvents={activeTab === 'map' ? 'auto' : 'none'}>
           <MapTab {...sharedTabProps} />
         </View>
-        <View style={{ flex: 1, display: activeTab === 'drivers' ? 'flex' : 'none' }}>
+        <View style={[styles.tabScreenContainer, activeTab === 'drivers' ? styles.tabScreenActive : styles.tabScreenHidden]} pointerEvents={activeTab === 'drivers' ? 'auto' : 'none'}>
           <DriversTab {...sharedTabProps} handleTabPress={handleTabPress} />
         </View>
-        <View style={{ flex: 1, display: activeTab === 'settings' ? 'flex' : 'none' }}>
+        <View style={[styles.tabScreenContainer, activeTab === 'settings' ? styles.tabScreenActive : styles.tabScreenHidden]} pointerEvents={activeTab === 'settings' ? 'auto' : 'none'}>
           <SettingsTab
             {...prefs} isEditingName={isEditingName} setEditingName={setEditingName}
             setIsEditingName={setIsEditingName} editingName={editingName}

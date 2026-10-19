@@ -7,12 +7,13 @@ import * as Clipboard from 'expo-clipboard';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 import { MiniLangSelector } from '../components/LangSelectors';
+import { getVehicleIcon } from '../utils/avatar';
 
-export function SettingsTab({
+export const SettingsTab = React.memo(function SettingsTab({
   lang, changeLanguage, isEditingName, username, setEditingName, setIsEditingName,
   editingName, handleSaveName, rogerBeep, setRogerBeep, rogerBeepRef, playBeepOff,
   t, setIsEulaFromSettings, setShowEulaModal, triggerToast, setShowBlockedUsersModal,
-  blockedUsers, setShowGuide,
+  blockedUsers, setShowGuide, avatarColor, vehicleType, setShowAvatarModal,
 }) {
   const handleToggleRogerBeep = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -103,6 +104,24 @@ export function SettingsTab({
               </TouchableOpacity>
             </View>
           )}
+          <View style={[styles.settingsRow, { borderTopWidth: 1, borderTopColor: COLORS.borderSubtle, marginTop: 8, paddingTop: 10 }]}>
+            <View style={styles.settingsRowLeft}>
+              <View style={[styles.settingsIconBox, { backgroundColor: `${avatarColor}22`, borderColor: avatarColor }]}>
+                <Ionicons name={getVehicleIcon(vehicleType) || 'car-sport'} size={18} color={avatarColor} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingsRowTitle}>{t('avatarModalTitle')}</Text>
+                <Text style={styles.settingsRowSub}>{t('avatarModalSub')}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.settingsEditBtn}
+              onPress={() => setShowAvatarModal(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="color-palette-outline" size={16} color={avatarColor} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -228,4 +247,4 @@ export function SettingsTab({
       </View>
     </ScrollView>
   );
-}
+});

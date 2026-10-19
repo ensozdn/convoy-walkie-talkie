@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { createAudioPlayer } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import { MAX_QUEUED_CLIPS, MAX_CLIP_PLAYBACK_MS } from '../constants/audio';
@@ -73,7 +73,7 @@ export function useIncomingAudio({ blockedUsersRef, rogerBeepRef, playBeepOff })
     }
   };
 
-  const playIncoming = (clip) => {
+  const playIncoming = useCallback((clip) => {
     if (!clip?.audioBase64) return;
     if (clip.sender && blockedUsersRef.current.includes(clip.sender)) {
       console.log('[INCOMING_AUDIO] Engellenen kullanicidan gelen ses filtrelendi:', clip.sender);
@@ -82,18 +82,18 @@ export function useIncomingAudio({ blockedUsersRef, rogerBeepRef, playBeepOff })
     queueRef.current.push(clip);
     if (queueRef.current.length > MAX_QUEUED_CLIPS) queueRef.current.shift();
     playNext();
-  };
+  }, [blockedUsersRef]);
 
-  const dropIncomingFrom = (senderName) => {
+  const dropIncomingFrom = useCallback((senderName) => {
     queueRef.current = queueRef.current.filter((clip) => clip.sender !== senderName);
     const current = currentRef.current;
     if (current?.clip?.sender === senderName) finishCurrent(current, false);
-  };
+  }, []);
 
-  const clearIncoming = () => {
+  const clearIncoming = useCallback(() => {
     queueRef.current = [];
     releaseCurrent();
-  };
+  }, []);
 
   useEffect(() => {
     isUnmountedRef.current = false;
@@ -101,7 +101,7 @@ export function useIncomingAudio({ blockedUsersRef, rogerBeepRef, playBeepOff })
       isUnmountedRef.current = true;
       clearIncoming();
     };
-  }, []);
+  }, [clearIncoming]);
 
   return { playIncoming, dropIncomingFrom, clearIncoming };
 }

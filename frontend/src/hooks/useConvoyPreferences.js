@@ -20,6 +20,9 @@ export function useConvoyPreferences({
   const [showBlockedUsersModal, setShowBlockedUsersModal] = useState(false);
   const [rogerBeep, setRogerBeep] = useState(true);
   const rogerBeepRef = useRef(true);
+  const [avatarColor, setAvatarColor] = useState('#38bdf8');
+  const [vehicleType, setVehicleType] = useState('car');
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const toastAnim = useRef(new Animated.Value(-80)).current;
   const guideTimerRef = useRef(null);
@@ -78,6 +81,12 @@ export function useConvoyPreferences({
           setRogerBeep(parsedRoger);
           rogerBeepRef.current = parsedRoger;
         }
+
+        const savedColor = await AsyncStorage.getItem('@convoy_avatar_color');
+        if (mounted && savedColor) setAvatarColor(savedColor);
+
+        const savedVehicle = await AsyncStorage.getItem('@convoy_vehicle_type');
+        if (mounted && savedVehicle) setVehicleType(savedVehicle);
       } catch (e) {
         console.error('[PREFS] AsyncStorage yukleme hatasi:', e.message);
       }
@@ -207,6 +216,27 @@ export function useConvoyPreferences({
     Alert.alert(t('reportSubmittedTitle'), t('reportSubmittedMsg'));
   }, [roomCodeRef, selectedUserForAction, socketRef, t, usernameRef]);
 
+  const handleUpdateAvatarProfile = useCallback(async ({ color, vehicle }) => {
+    const nextColor = color || avatarColor;
+    const nextVehicle = vehicle || vehicleType;
+    if (color) {
+      setAvatarColor(color);
+      AsyncStorage.setItem('@convoy_avatar_color', color).catch((e) => console.warn('[PREFS]', e.message));
+    }
+    if (vehicle) {
+      setVehicleType(vehicle);
+      AsyncStorage.setItem('@convoy_vehicle_type', vehicle).catch((e) => console.warn('[PREFS]', e.message));
+    }
+    if (socketRef.current?.connected && roomCodeRef.current && usernameRef.current) {
+      socketRef.current.emit('update_profile', {
+        roomName: roomCodeRef.current, participantName: usernameRef.current,
+        avatarColor: nextColor, vehicleType: nextVehicle,
+      });
+    }
+    setShowAvatarModal(false);
+    triggerToast(t('profileUpdatedToast'));
+  }, [avatarColor, roomCodeRef, socketRef, t, triggerToast, usernameRef, vehicleType]);
+
   return {
     lang, t, changeLanguage, username, setUsername, saveUsername, recentCodes, addRecentCode,
     showGuide, setShowGuide, handleCloseGuide, showEulaModal, setShowEulaModal,
@@ -214,5 +244,6 @@ export function useConvoyPreferences({
     selectedUserForAction, setSelectedUserForAction, userActionStep, setUserActionStep,
     showBlockedUsersModal, setShowBlockedUsersModal, handleBlockUser, handleUnblockUser,
     handleSelectReportReason, rogerBeep, setRogerBeep, rogerBeepRef, toastMessage, toastAnim, triggerToast,
+    avatarColor, setAvatarColor, vehicleType, setVehicleType, showAvatarModal, setShowAvatarModal, handleUpdateAvatarProfile,
   };
 }

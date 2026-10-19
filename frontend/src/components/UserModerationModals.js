@@ -162,7 +162,7 @@ export function BlockedUsersModal({
   showBlockedUsersModal,
   setShowBlockedUsersModal,
   t,
-  blockedUsers,
+  blockedUsers = [],
   handleUnblockUser,
 }) {
   return (
@@ -221,11 +221,13 @@ export function BlockedUsersModal({
           </ScrollView>
 
           <TouchableOpacity
-            style={[styles.guideButton, { marginTop: 14 }]}
+            style={styles.blockedModalCloseBtn}
             onPress={() => setShowBlockedUsersModal(false)}
             activeOpacity={0.85}
           >
-            <Text style={styles.guideButtonText}>{t('eulaCloseBtn')}</Text>
+            <Text style={styles.blockedModalCloseBtnText}>
+              {(typeof t === 'function' && (t('closeModal') || t('eulaCloseBtn'))) || 'Kapat'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

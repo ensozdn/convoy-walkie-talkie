@@ -20,7 +20,8 @@ export async function warmUpBackend(externalSignal) {
     });
     return response.ok;
   } catch (e) {
-    if (e?.name !== 'AbortError') {
+    const isCancel = e?.name === 'AbortError' || String(e?.message || '').toLowerCase().includes('cancel');
+    if (!isCancel) {
       console.warn('[WARMUP] Sunucu on isitma istegi basarisiz:', e?.message ?? e);
     }
     return false;

@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 import { formatDriverDistance, formatDriverSpeed } from '../utils/geo';
+import { resolveAvatarColors, getVehicleIcon } from '../utils/avatar';
 import { QuickPttDock } from '../components/QuickPttDock';
 
-export function DriversTab({
+export const DriversTab = React.memo(function DriversTab({
   t,
   roomCode,
   connectionState,
@@ -74,13 +75,21 @@ export function DriversTab({
                   }}
                   activeOpacity={p.coords ? 0.75 : 1}
                 >
-                  <View style={[styles.driverAvatarLarge, isSpeaking && styles.driverAvatarLargeSpeaking]}>
-                    {isSpeaking ? (
-                      <Ionicons name="volume-high" size={22} color={COLORS.white} />
-                    ) : (
-                      <Text style={styles.driverAvatarText}>{p.name.charAt(0).toUpperCase()}</Text>
-                    )}
-                  </View>
+                  {(() => {
+                    const palette = resolveAvatarColors(p.avatarColor, p.name);
+                    const vehicleIcon = getVehicleIcon(p.vehicleType);
+                    return (
+                      <View style={[styles.driverAvatarLarge, { backgroundColor: palette.bg, borderColor: isSpeaking ? COLORS.txGreenBright : palette.border }, isSpeaking && styles.driverAvatarLargeSpeaking]}>
+                        {isSpeaking ? (
+                          <Ionicons name="volume-high" size={22} color={COLORS.white} />
+                        ) : vehicleIcon ? (
+                          <Ionicons name={vehicleIcon} size={22} color={palette.border} />
+                        ) : (
+                          <Text style={[styles.driverAvatarText, { color: palette.text }]}>{p.name.charAt(0).toUpperCase()}</Text>
+                        )}
+                      </View>
+                    );
+                  })()}
 
                   <View style={styles.driverInfo}>
                     <View style={styles.driverNameRow}>
@@ -146,4 +155,5 @@ export function DriversTab({
       />
     </View>
   );
-}
+});
+

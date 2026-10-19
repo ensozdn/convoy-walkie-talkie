@@ -20,6 +20,8 @@ export interface RoomParticipant {
   lastSeen: number;
   isSpeaking: boolean;
   coords: Coordinates | null;
+  avatarColor?: string | null;
+  vehicleType?: string | null;
 }
 
 export interface AudioClip {
@@ -47,7 +49,14 @@ export class RoomRegistry {
   private readonly waypoints = new Map<string, RoomWaypoint>();
   private readonly audioClips = new Map<string, AudioClip[]>();
 
-  join(roomName: string, participantName: string, socketId: string, coords?: Coordinates): RoomParticipant {
+  join(
+    roomName: string,
+    participantName: string,
+    socketId: string,
+    coords?: Coordinates,
+    avatarColor?: string,
+    vehicleType?: string,
+  ): RoomParticipant {
     if (!this.rooms.has(roomName)) {
       this.rooms.set(roomName, new Map());
     }
@@ -61,6 +70,8 @@ export class RoomRegistry {
       lastSeen: Date.now(),
       isSpeaking: false,
       coords: coords ?? existing?.coords ?? null,
+      avatarColor: avatarColor ?? existing?.avatarColor ?? null,
+      vehicleType: vehicleType ?? existing?.vehicleType ?? null,
     };
     participants.set(participantName, record);
 
@@ -72,7 +83,14 @@ export class RoomRegistry {
     return record;
   }
 
-  touch(roomName: string, participantName: string, socketId: string, coords?: Coordinates): boolean {
+  touch(
+    roomName: string,
+    participantName: string,
+    socketId: string,
+    coords?: Coordinates,
+    avatarColor?: string,
+    vehicleType?: string,
+  ): boolean {
     const participants = this.rooms.get(roomName);
     const existing = participants?.get(participantName);
     if (!existing) return false;
@@ -81,6 +99,12 @@ export class RoomRegistry {
     existing.lastSeen = Date.now();
     if (coords) {
       existing.coords = coords;
+    }
+    if (avatarColor) {
+      existing.avatarColor = avatarColor;
+    }
+    if (vehicleType) {
+      existing.vehicleType = vehicleType;
     }
     return true;
   }
@@ -183,6 +207,8 @@ export class RoomRegistry {
       coords: p.coords,
       isSpeaking: p.isSpeaking,
       isLeader: p.name === leaderName,
+      avatarColor: p.avatarColor ?? null,
+      vehicleType: p.vehicleType ?? null,
     }));
 
     return {

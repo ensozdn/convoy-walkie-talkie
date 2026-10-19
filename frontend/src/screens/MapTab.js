@@ -7,7 +7,7 @@ import { COLORS } from '../styles/theme';
 import { formatDriverDistance, formatDriverSpeed, useDrivingRoute } from '../utils/geo';
 import { QuickPttDock } from '../components/QuickPttDock';
 
-export function MapTab({
+export const MapTab = React.memo(function MapTab({
   t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
   mapType, setMapType, mapRef, userLocation, setIsFollowing, visibleParticipants,
   activeSpeaker, setSelectedUserForAction, setUserActionStep, handleFitAll,
@@ -294,5 +294,5 @@ export function MapTab({
       />
     </View>
   );
-}
+});
 

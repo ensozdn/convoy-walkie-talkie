@@ -3,6 +3,9 @@ import { IS_SMALL_DEVICE } from '../constants/config';
 import { COLORS, RADIUS } from './theme';
 
 export const tabsStyles = {
+  tabScreenContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  tabScreenActive: { opacity: 1, zIndex: 2 },
+  tabScreenHidden: { opacity: 0, zIndex: 1 },
   fullScreenTabContainer: {
     flex: 1, paddingHorizontal: IS_SMALL_DEVICE ? 12 : 16, paddingTop: IS_SMALL_DEVICE ? 6 : 10, paddingBottom: 6,
   },

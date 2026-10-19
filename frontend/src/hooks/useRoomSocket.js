@@ -10,23 +10,35 @@ const PING_DISPLAY_MS = 5500;
 
 export function useRoomSocket({
   socketRef, roomCodeRef, usernameRef, blockedUsersRef,
-  userLocation, setActiveSpeaker, playIncoming,
+  userLocation, setActiveSpeaker, playIncoming, avatarColor, vehicleType,
 }) {
   const [connectionState, setConnectionState] = useState('connected');
   const [participants, setParticipants] = useState([]);
   const [leaderName, setLeaderName] = useState(null);
   const [waypoint, setWaypoint] = useState(null);
   const [activePing, setActivePing] = useState(null);
-
   const latestCoordsRef = useRef(userLocation || DEFAULT_REGION);
   const latestWaypointRef = useRef(null);
   const isSessionActiveRef = useRef(false);
   const heartbeatTimerRef = useRef(null);
   const pingTimerRef = useRef(null);
+  const avatarColorRef = useRef(avatarColor);
+  const vehicleTypeRef = useRef(vehicleType);
 
   useEffect(() => {
     if (userLocation) latestCoordsRef.current = userLocation;
   }, [userLocation]);
+
+  useEffect(() => {
+    avatarColorRef.current = avatarColor;
+    vehicleTypeRef.current = vehicleType;
+    if (socketRef.current?.connected && roomCodeRef.current && usernameRef.current) {
+      socketRef.current.emit('update_profile', {
+        roomName: roomCodeRef.current, participantName: usernameRef.current,
+        avatarColor, vehicleType,
+      });
+    }
+  }, [avatarColor, roomCodeRef, socketRef, usernameRef, vehicleType]);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatTimerRef.current) {
@@ -49,18 +61,13 @@ export function useRoomSocket({
     if (!activeSocket || !roomName || !participantName) return;
 
     activeSocket.emit('join_room', {
-      roomName,
-      participantName,
-      coords: latestCoordsRef.current,
+      roomName, participantName, coords: latestCoordsRef.current,
+      avatarColor: avatarColorRef.current, vehicleType: vehicleTypeRef.current,
     });
     if (latestWaypointRef.current && latestWaypointRef.current.setBy === participantName) {
       activeSocket.emit('set_waypoint', {
-        roomName,
-        participantName,
-        coords: {
-          latitude: latestWaypointRef.current.latitude,
-          longitude: latestWaypointRef.current.longitude,
-        },
+        roomName, participantName,
+        coords: { latitude: latestWaypointRef.current.latitude, longitude: latestWaypointRef.current.longitude },
       });
     }
   }, [roomCodeRef, socketRef, usernameRef]);
@@ -73,9 +80,8 @@ export function useRoomSocket({
       const participantName = usernameRef.current;
       if (!activeSocket?.connected || !roomName || !participantName) return;
       activeSocket.emit('heartbeat', {
-        roomName,
-        participantName,
-        coords: latestCoordsRef.current,
+        roomName, participantName, coords: latestCoordsRef.current,
+        avatarColor: avatarColorRef.current, vehicleType: vehicleTypeRef.current,
       });
     }, HEARTBEAT_INTERVAL_MS);
   }, [roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
@@ -104,8 +110,9 @@ export function useRoomSocket({
     if (coords) latestCoordsRef.current = coords;
     isSessionActiveRef.current = true;
 
+    console.log('[WS] Odaya baglaniliyor:', code, 'Kullanici:', name);
     const socket = io(BACKEND_URL, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -115,6 +122,7 @@ export function useRoomSocket({
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      console.log('[WS CONNECTED] Sunucuya baglandi, soket id:', socket.id);
       setConnectionState('connected');
       emitJoinCurrentRoom(socket);
       startHeartbeat(socket);
@@ -137,6 +145,7 @@ export function useRoomSocket({
 
     socket.on('room_state_update', (data) => {
       if (!data || !Array.isArray(data.participants)) return;
+      console.log('[WS ODA DURUMU] Katilimcilar:', data.participants.map((p) => p.name));
       const currentName = usernameRef.current;
       const resolvedLeader = data.leaderName ?? data.participants[0]?.name ?? null;
       setLeaderName(resolvedLeader);
@@ -154,6 +163,8 @@ export function useRoomSocket({
           isLocal: p.name === currentName,
           isLeader: Boolean(p.isLeader || (resolvedLeader && p.name === resolvedLeader)),
           coords: p.coords || DEFAULT_REGION,
+          avatarColor: p.avatarColor,
+          vehicleType: p.vehicleType,
         }))
       );
       applyActiveSpeaker(data.activeSpeaker);
@@ -207,15 +218,9 @@ export function useRoomSocket({
   const setConvoyWaypoint = useCallback((coords) => {
     const roomName = roomCodeRef.current;
     const participantName = usernameRef.current;
-    const nextWp =
-      coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number'
-        ? {
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            setBy: participantName || 'Leader',
-            timestamp: Date.now(),
-          }
-        : null;
+    const nextWp = coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number'
+      ? { latitude: coords.latitude, longitude: coords.longitude, setBy: participantName || 'Leader', timestamp: Date.now() }
+      : null;
     latestWaypointRef.current = nextWp;
     setWaypoint(nextWp);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -223,8 +228,7 @@ export function useRoomSocket({
     const activeSocket = socketRef.current;
     if (activeSocket?.connected && roomName && participantName) {
       activeSocket.emit('set_waypoint', {
-        roomName,
-        participantName,
+        roomName, participantName,
         coords: nextWp ? { latitude: nextWp.latitude, longitude: nextWp.longitude } : null,
       });
     }
@@ -239,10 +243,7 @@ export function useRoomSocket({
     latestWaypointRef.current = null;
     setWaypoint(null);
     if (socketRef.current) {
-      socketRef.current.emit('leave_room', {
-        roomName: roomCodeRef.current,
-        participantName: usernameRef.current,
-      });
+      socketRef.current.emit('leave_room', { roomName: roomCodeRef.current, participantName: usernameRef.current });
       socketRef.current.removeAllListeners();
       socketRef.current.disconnect();
       socketRef.current = null;
@@ -250,6 +251,11 @@ export function useRoomSocket({
     setParticipants([]);
     setConnectionState('connected');
   }, [clearPingTimer, roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
+
+  const connectFnRef = useRef(connect);
+  connectFnRef.current = connect;
+  const emitJoinFnRef = useRef(emitJoinCurrentRoom);
+  emitJoinFnRef.current = emitJoinCurrentRoom;
 
   useEffect(() => {
     const warmupAbort = new AbortController();
@@ -262,14 +268,9 @@ export function useRoomSocket({
         return;
       }
       const activeSocket = socketRef.current;
-      if (!activeSocket) {
-        connect(usernameRef.current, roomCodeRef.current, latestCoordsRef.current);
-      } else if (activeSocket.connected) {
-        emitJoinCurrentRoom(activeSocket);
-      } else {
-        setConnectionState('reconnecting');
-        activeSocket.connect();
-      }
+      if (!activeSocket) connectFnRef.current(usernameRef.current, roomCodeRef.current, latestCoordsRef.current);
+      else if (activeSocket.connected) emitJoinFnRef.current(activeSocket);
+      else { setConnectionState('reconnecting'); activeSocket.connect(); }
     });
 
     return () => {
@@ -283,7 +284,7 @@ export function useRoomSocket({
         socketRef.current = null;
       }
     };
-  }, [clearPingTimer, connect, emitJoinCurrentRoom, roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
+  }, [clearPingTimer, roomCodeRef, socketRef, stopHeartbeat, usernameRef]);
 
   return {
     connectionState, participants, leaderName, waypoint, setConvoyWaypoint,

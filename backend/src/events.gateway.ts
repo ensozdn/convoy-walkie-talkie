@@ -56,15 +56,21 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
   @SubscribeMessage('join_room')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomName: string; participantName: string; coords?: Coordinates },
+    @MessageBody() payload: {
+      roomName: string;
+      participantName: string;
+      coords?: Coordinates;
+      avatarColor?: string;
+      vehicleType?: string;
+    },
   ) {
-    const { roomName, participantName, coords } = payload;
+    const { roomName, participantName, coords, avatarColor, vehicleType } = payload;
     if (!roomName || !participantName) return { success: false };
 
     client.join(roomName);
     client.data = { roomName, participantName };
 
-    this.registry.join(roomName, participantName, client.id, coords);
+    this.registry.join(roomName, participantName, client.id, coords, avatarColor, vehicleType);
     console.log(`[WS JOIN] ${participantName} "${roomName}" odasina katildi.`);
     this.broadcastRoomState(roomName);
     return { success: true };
@@ -73,16 +79,41 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
   @SubscribeMessage('heartbeat')
   handleHeartbeat(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { roomName: string; participantName: string; coords?: Coordinates },
+    @MessageBody() payload: {
+      roomName: string;
+      participantName: string;
+      coords?: Coordinates;
+      avatarColor?: string;
+      vehicleType?: string;
+    },
   ) {
-    const { roomName, participantName, coords } = payload;
+    const { roomName, participantName, coords, avatarColor, vehicleType } = payload;
     if (!roomName || !participantName) return { success: false };
 
     client.data = { roomName, participantName };
-    const touched = this.registry.touch(roomName, participantName, client.id, coords);
+    const touched = this.registry.touch(roomName, participantName, client.id, coords, avatarColor, vehicleType);
     if (!touched) {
       return this.handleJoinRoom(client, payload);
     }
+    return { success: true };
+  }
+
+  @SubscribeMessage('update_profile')
+  handleUpdateProfile(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: {
+      roomName: string;
+      participantName: string;
+      avatarColor?: string;
+      vehicleType?: string;
+    },
+  ) {
+    const { roomName, participantName, avatarColor, vehicleType } = payload;
+    if (!roomName || !participantName) return { success: false };
+
+    this.registry.touch(roomName, participantName, client.id, undefined, avatarColor, vehicleType);
+    console.log(`[WS PROFILE] ${participantName} profilini guncelledi: ${vehicleType} / ${avatarColor}`);
+    this.broadcastRoomState(roomName);
     return { success: true };
   }
 

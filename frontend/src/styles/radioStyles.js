@@ -101,11 +101,23 @@ export const radioStyles = {
     borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.borderDefault,
   },
   channelDistanceBadgeText: { color: COLORS.rxAmberBright, fontSize: 11, fontWeight: '800' },
-  pingAlertBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.rxAmberSoft,
-    borderRadius: RADIUS.sm, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: COLORS.rxAmber,
+  pingFloatingAlert: {
+    position: 'absolute', top: IS_SMALL_DEVICE ? 60 : 70, left: IS_SMALL_DEVICE ? 12 : 16, right: IS_SMALL_DEVICE ? 12 : 16,
+    zIndex: 99, elevation: 10, backgroundColor: 'rgba(15, 23, 42, 0.96)', borderRadius: RADIUS.md, borderWidth: 1.5,
+    paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 10,
   },
-  pingAlertText: { color: COLORS.white, fontSize: 12, fontWeight: '800', flex: 1 },
+  pingAlertIconBox: {
+    width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+  },
+  pingAlertContent: { flex: 1 },
+  pingAlertSenderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  pingAlertSenderBadge: {
+    backgroundColor: COLORS.bgInput, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+    borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  pingAlertSenderText: { color: COLORS.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  pingAlertMessage: { fontSize: 13, fontWeight: '900', letterSpacing: 0.3 },
   radioMiniMapCard: {
     flex: 1, minHeight: IS_SMALL_DEVICE ? 105 : 130, maxHeight: IS_SMALL_DEVICE ? 140 : 185,
     backgroundColor: COLORS.bgElevated, borderRadius: RADIUS.md, overflow: 'hidden',
