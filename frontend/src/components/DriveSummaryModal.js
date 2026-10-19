@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 
-export function DriveSummaryModal({ summaryData, onClose, t }) {
+export function DriveSummaryModal({ summaryData, onClose, onDisable, t }) {
   if (!summaryData) return null;
 
   const handleShare = async () => {
@@ -18,9 +18,16 @@ export function DriveSummaryModal({ summaryData, onClose, t }) {
     }
   };
 
+  const handleOptOut = () => {
+    if (typeof onDisable === 'function') {
+      onDisable(false);
+    }
+    onClose();
+  };
+
   return (
     <Modal visible={Boolean(summaryData)} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalBackdrop}>
+      <View style={styles.modalOverlay}>
         <View style={styles.driveSummaryCard}>
           <View style={styles.driveSummaryHeader}>
             <View style={styles.driveSummaryIconBox}>
@@ -58,6 +65,11 @@ export function DriveSummaryModal({ summaryData, onClose, t }) {
 
             <TouchableOpacity style={styles.driveSummaryCloseBtn} onPress={onClose} activeOpacity={0.85}>
               <Text style={styles.driveSummaryCloseText}>{t('backToLobby')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.driveSummaryOptOutBtn} onPress={handleOptOut} activeOpacity={0.75}>
+              <Ionicons name="eye-off-outline" size={13} color={COLORS.textDim} />
+              <Text style={styles.driveSummaryOptOutText}>{t('dontShowAgain')}</Text>
             </TouchableOpacity>
           </View>
         </View>

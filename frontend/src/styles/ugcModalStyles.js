@@ -137,4 +137,9 @@ export const ugcModalStyles = {
     borderWidth: 1, borderColor: COLORS.borderDefault,
   },
   driveSummaryCloseText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '800' },
+  driveSummaryOptOutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingTop: 4, paddingBottom: 2,
+  },
+  driveSummaryOptOutText: { color: COLORS.textDim, fontSize: 11, fontWeight: '700' },
 };

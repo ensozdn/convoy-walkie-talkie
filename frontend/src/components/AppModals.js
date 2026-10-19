@@ -24,7 +24,12 @@ export function AppModals({ prefs, t, username, driveSession }) {
         username={username}
         t={t}
       />
-      <DriveSummaryModal summaryData={driveSession?.summaryData} onClose={driveSession?.closeSummary} t={t} />
+      <DriveSummaryModal
+        summaryData={driveSession?.summaryData}
+        onClose={driveSession?.closeSummary}
+        onDisable={driveSession?.setSummaryEnabled}
+        t={t}
+      />
       <Toast toastMessage={prefs.toastMessage} toastAnim={prefs.toastAnim} />
     </>
   );
