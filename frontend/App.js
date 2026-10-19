@@ -11,17 +11,14 @@ import { usePTT } from './src/hooks/usePTT';
 import { useRoomSocket } from './src/hooks/useRoomSocket';
 import { useConvoyPreferences } from './src/hooks/useConvoyPreferences';
 import { useUIAnimations } from './src/hooks/useUIAnimations';
-import { GuideModal, EulaModal, UserActionModal, BlockedUsersModal } from './src/components/Modals';
-import { AvatarCustomizationModal } from './src/components/AvatarCustomizationModal';
-import { Toast } from './src/components/Toast';
+import { useConvoyAds } from './src/hooks/useConvoyAds';
+import { AppModals } from './src/components/AppModals';
 import { BottomTabBar } from './src/components/BottomTabBar';
 import { MapTab } from './src/screens/MapTab';
 import { DriversTab } from './src/screens/DriversTab';
 import { SettingsTab } from './src/screens/SettingsTab';
 import { LobbyScreen } from './src/screens/LobbyScreen';
 import { RadioTab } from './src/screens/RadioTab';
-
-const LOGO_BADGE = require('./assets/logo-badge.png');
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('radio');
@@ -78,6 +75,7 @@ export default function App() {
     fadeAnim, slideAnim, pulseAnim, logoGlowAnim, logoScaleAnim, tabFadeAnim, tabSlideAnim, animateTabTransition,
   } = useUIAnimations({ lobbyMode, activeSpeaker });
 
+  const ads = useConvoyAds(prefs.triggerToast, prefs.t);
   const { t, username, setUsername } = prefs;
 
   const handleToggleMute = () => {
@@ -155,6 +153,7 @@ export default function App() {
     setActiveSpeaker(null);
     setIsSpeakingLocally(false);
     setActiveTab('radio');
+    ads.showExitInterstitial();
   };
 
   const confirmLeaveRoom = () => {
@@ -219,29 +218,15 @@ export default function App() {
     isFollowing, setIsFollowing, handleFitAll, handleRecenter,
     leaderName: effectiveLeaderName, username: localDisplayName, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
     setSelectedUserForAction: prefs.setSelectedUserForAction, setUserActionStep: prefs.setUserActionStep,
-    onOpenAvatarModal: () => prefs.setShowAvatarModal(true),
+    onOpenAvatarModal: () => prefs.setShowAvatarModal(true), ads,
   }), [
     t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
     userLocation, visibleParticipants, activeSpeaker, mapType,
     isFollowing, effectiveLeaderName, localDisplayName, waypoint,
-    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal,
+    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal, ads,
   ]);
 
-  const modalOverlays = (
-    <>
-      <Image source={LOGO_BADGE} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} fadeDuration={0} />
-      <GuideModal showGuide={prefs.showGuide} handleCloseGuide={prefs.handleCloseGuide} t={t} />
-      <EulaModal {...prefs} t={t} />
-      <UserActionModal {...prefs} t={t} />
-      <BlockedUsersModal {...prefs} t={t} />
-      <AvatarCustomizationModal
-        visible={prefs.showAvatarModal} onClose={() => prefs.setShowAvatarModal(false)}
-        onSave={prefs.handleUpdateAvatarProfile} currentColor={prefs.avatarColor}
-        currentVehicle={prefs.vehicleType} username={localDisplayName} t={t}
-      />
-      <Toast toastMessage={prefs.toastMessage} toastAnim={prefs.toastAnim} />
-    </>
-  );
+  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} />;
 
   if (!isInRoom) {
     return (
@@ -254,7 +239,7 @@ export default function App() {
         copied={copied} generatedCode={generatedCode} handleShareCode={handleShareCode}
         handleEnterCreatedRoom={handleEnterCreatedRoom} isInputFocused={isInputFocused}
         setIsInputFocused={setIsInputFocused} joinCode={joinCode} setJoinCode={setJoinCode}
-        handleJoinRoom={handleJoinRoom} overlays={modalOverlays}
+        handleJoinRoom={handleJoinRoom} overlays={modalOverlays} ads={ads}
       />
     );
   }
@@ -287,7 +272,7 @@ export default function App() {
           <SettingsTab
             {...prefs} isEditingName={isEditingName} setEditingName={setEditingName}
             setIsEditingName={setIsEditingName} editingName={editingName}
-            handleSaveName={handleSaveName} playBeepOff={playBeepOff}
+            handleSaveName={handleSaveName} playBeepOff={playBeepOff} ads={ads}
           />
         </View>
       </Animated.View>

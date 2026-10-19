@@ -22,7 +22,8 @@
           "audio",
           "location"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "Bu izin, sizlere sürüş deneyiminizi kesintiye uğratmayacak sponsorlu içerikler sunabilmek için kullanılır."
       }
     },
     "android": {
@@ -51,7 +52,15 @@
           "isAndroidBackgroundLocationEnabled": true
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "userTrackingUsageDescription": "Bu izin, sizlere sürüş deneyiminizi kesintiye uğratmayacak sponsorlu içerikler sunabilmek için kullanılır."
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 import { formatRoomCodeInput } from '../utils/roomCode';
+import { ConvoyBanner } from './AdBanners';
 
 export function LobbyCreateCard({
   fadeAnim,
@@ -15,6 +16,7 @@ export function LobbyCreateCard({
   generatedCode,
   handleEnterCreatedRoom,
   handleShareCode,
+  isAdFree,
 }) {
   return (
     <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -67,6 +69,8 @@ export function LobbyCreateCard({
           <Text style={styles.shareButtonText}>{t('sendInvite')}</Text>
         </View>
       </TouchableOpacity>
+
+      <ConvoyBanner isAdFree={isAdFree} style={{ marginTop: 10 }} />
     </Animated.View>
   );
 }

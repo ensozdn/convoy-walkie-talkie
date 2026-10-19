@@ -16,6 +16,7 @@ import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 import { MiniLangSelector } from '../components/LangSelectors';
 import { LobbyCreateCard, LobbyJoinCard } from '../components/LobbySubScreens';
+import { ConvoyBanner, RewardedAdButton } from '../components/AdBanners';
 
 const APP_LOGO = require('../../assets/logo-badge.png');
 
@@ -45,6 +46,7 @@ export function LobbyScreen({
   handleJoinRoom,
   recentCodes,
   overlays,
+  ads,
 }) {
   const topBar = (
     <View style={styles.lobbyTopBar}>
@@ -75,6 +77,7 @@ export function LobbyScreen({
               generatedCode={generatedCode}
               handleEnterCreatedRoom={handleEnterCreatedRoom}
               handleShareCode={handleShareCode}
+              isAdFree={ads?.isAdFree}
             />
           ) : lobbyMode === 'join' ? (
             <LobbyJoinCard
@@ -161,11 +164,20 @@ export function LobbyScreen({
                     <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
                   </TouchableOpacity>
                 </View>
+
+                <RewardedAdButton
+                  isAdFree={ads?.isAdFree}
+                  remainingHours={ads?.adFreeRemainingHours}
+                  onPress={ads?.showRewardedAd}
+                  isLoading={ads?.isRewardedLoading}
+                  t={t}
+                  style={{ marginTop: 10 }}
+                />
               </View>
             </Animated.View>
           )}
 
-          <View />
+          <ConvoyBanner isAdFree={ads?.isAdFree} />
         </View>
         {overlays}
       </SafeAreaView>

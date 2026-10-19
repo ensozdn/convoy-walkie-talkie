@@ -6,6 +6,7 @@ import { COLORS } from '../styles/theme';
 import { formatDriverDistance, formatDriverSpeed } from '../utils/geo';
 import { resolveAvatarColors, getVehicleIcon } from '../utils/avatar';
 import { QuickPttDock } from '../components/QuickPttDock';
+import { ConvoyBanner } from '../components/AdBanners';
 
 export const DriversTab = React.memo(function DriversTab({
   t,
@@ -21,6 +22,7 @@ export const DriversTab = React.memo(function DriversTab({
   mapRef,
   setSelectedUserForAction,
   setUserActionStep,
+  ads,
 }) {
   return (
     <View style={{ flex: 1 }}>
@@ -141,6 +143,7 @@ export const DriversTab = React.memo(function DriversTab({
               );
             })
           )}
+          <ConvoyBanner isAdFree={ads?.isAdFree} style={{ marginTop: 8, marginBottom: 8 }} />
         </ScrollView>
       </View>
 
