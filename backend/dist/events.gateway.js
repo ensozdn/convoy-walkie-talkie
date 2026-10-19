@@ -149,12 +149,16 @@ let EventsGateway = class EventsGateway {
         const { roomName, participantName, coords } = payload;
         if (!roomName || !participantName)
             return { success: false };
-        this.registry.touch(roomName, participantName, client.id);
+        if (!this.registry.touch(roomName, participantName, client.id)) {
+            client.join(roomName);
+            this.registry.join(roomName, participantName, client.id);
+        }
         if (!this.registry.isLeader(roomName, participantName)) {
             return { success: false };
         }
         const waypoint = this.registry.setWaypoint(roomName, participantName, coords);
         this.server.to(roomName).emit('waypoint_updated', { waypoint });
+        this.broadcastRoomState(roomName);
         return { success: true, waypoint };
     }
     sweepStaleParticipants() {

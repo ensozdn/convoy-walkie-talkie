@@ -3,6 +3,7 @@ import { Animated, View, Text, TouchableOpacity, TextInput } from 'react-native'
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
+import { formatRoomCodeInput } from '../utils/roomCode';
 
 export function LobbyCreateCard({
   fadeAnim,
@@ -107,7 +108,9 @@ export function LobbyJoinCard({
             placeholder="ABC-123"
             placeholderTextColor={COLORS.textDim}
             value={joinCode}
-            onChangeText={setJoinCode}
+            onChangeText={(val) => setJoinCode(formatRoomCodeInput(val))}
+            maxLength={7}
+            autoCorrect={false}
             autoCapitalize="characters"
             returnKeyType="done"
             onSubmitEditing={handleJoinRoom}

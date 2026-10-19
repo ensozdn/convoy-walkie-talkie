@@ -17,7 +17,7 @@ import { COLORS } from '../styles/theme';
 import { MiniLangSelector } from '../components/LangSelectors';
 import { LobbyCreateCard, LobbyJoinCard } from '../components/LobbySubScreens';
 
-const APP_LOGO = require('../../assets/icon.png');
+const APP_LOGO = require('../../assets/logo-badge.png');
 
 export function LobbyScreen({
   lobbyMode,
@@ -102,7 +102,7 @@ export function LobbyScreen({
                       },
                     ]}
                   />
-                  <Image source={APP_LOGO} style={styles.lobbyLogoImage} resizeMode="cover" />
+                  <Image source={APP_LOGO} style={styles.lobbyLogoImage} resizeMode="cover" fadeDuration={0} />
                 </View>
                 <Text style={styles.title}>{t('title')}</Text>
                 <Text style={styles.subtitle}>{t('subtitle')}</Text>

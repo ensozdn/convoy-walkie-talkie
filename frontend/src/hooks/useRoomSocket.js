@@ -19,6 +19,7 @@ export function useRoomSocket({
   const [activePing, setActivePing] = useState(null);
 
   const latestCoordsRef = useRef(userLocation || DEFAULT_REGION);
+  const latestWaypointRef = useRef(null);
   const isSessionActiveRef = useRef(false);
   const heartbeatTimerRef = useRef(null);
   const pingTimerRef = useRef(null);
@@ -52,6 +53,16 @@ export function useRoomSocket({
       participantName,
       coords: latestCoordsRef.current,
     });
+    if (latestWaypointRef.current && latestWaypointRef.current.setBy === participantName) {
+      activeSocket.emit('set_waypoint', {
+        roomName,
+        participantName,
+        coords: {
+          latitude: latestWaypointRef.current.latitude,
+          longitude: latestWaypointRef.current.longitude,
+        },
+      });
+    }
   }, [roomCodeRef, socketRef, usernameRef]);
 
   const startHeartbeat = useCallback((socketInstance) => {
@@ -129,8 +140,11 @@ export function useRoomSocket({
       const currentName = usernameRef.current;
       const resolvedLeader = data.leaderName ?? data.participants[0]?.name ?? null;
       setLeaderName(resolvedLeader);
-      if ('waypoint' in data) {
-        setWaypoint(data.waypoint ?? null);
+      if (data.waypoint) {
+        latestWaypointRef.current = data.waypoint;
+        setWaypoint(data.waypoint);
+      } else if ('waypoint' in data && !latestWaypointRef.current) {
+        setWaypoint(null);
       }
 
       setParticipants(
@@ -147,7 +161,9 @@ export function useRoomSocket({
 
     socket.on('waypoint_updated', (data) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setWaypoint(data?.waypoint ?? null);
+      const nextWp = data?.waypoint ?? null;
+      latestWaypointRef.current = nextWp;
+      setWaypoint(nextWp);
     });
 
     socket.on('speaker_changed', (data) => applyActiveSpeaker(data?.activeSpeaker ?? null));
@@ -189,12 +205,29 @@ export function useRoomSocket({
   }, [roomCodeRef, socketRef, usernameRef]);
 
   const setConvoyWaypoint = useCallback((coords) => {
-    const activeSocket = socketRef.current;
     const roomName = roomCodeRef.current;
     const participantName = usernameRef.current;
-    if (!activeSocket?.connected || !roomName || !participantName) return;
+    const nextWp =
+      coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number'
+        ? {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            setBy: participantName || 'Leader',
+            timestamp: Date.now(),
+          }
+        : null;
+    latestWaypointRef.current = nextWp;
+    setWaypoint(nextWp);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    activeSocket.emit('set_waypoint', { roomName, participantName, coords });
+
+    const activeSocket = socketRef.current;
+    if (activeSocket?.connected && roomName && participantName) {
+      activeSocket.emit('set_waypoint', {
+        roomName,
+        participantName,
+        coords: nextWp ? { latitude: nextWp.latitude, longitude: nextWp.longitude } : null,
+      });
+    }
   }, [roomCodeRef, socketRef, usernameRef]);
 
   const leaveRoom = useCallback(() => {
@@ -203,6 +236,7 @@ export function useRoomSocket({
     clearPingTimer();
     setActivePing(null);
     setLeaderName(null);
+    latestWaypointRef.current = null;
     setWaypoint(null);
     if (socketRef.current) {
       socketRef.current.emit('leave_room', {

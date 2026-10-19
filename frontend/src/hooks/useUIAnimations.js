@@ -72,13 +72,9 @@ export function useUIAnimations({ lobbyMode, activeSpeaker }) {
   }, [activeSpeaker, pulseAnim]);
 
   const animateTabTransition = useCallback(() => {
-    tabFadeAnim.setValue(0.4);
-    tabSlideAnim.setValue(6);
-    Animated.parallel([
-      Animated.timing(tabFadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
-      Animated.timing(tabSlideAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
-    ]).start();
-  }, [tabFadeAnim, tabSlideAnim]);
+    tabFadeAnim.setValue(0.7);
+    Animated.timing(tabFadeAnim, { toValue: 1, duration: 120, useNativeDriver: true }).start();
+  }, [tabFadeAnim]);
 
   return {
     fadeAnim,

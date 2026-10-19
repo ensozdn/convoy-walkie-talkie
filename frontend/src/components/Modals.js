@@ -1,59 +1,123 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
+import { COLORS } from '../styles/theme';
 export { UserActionModal, BlockedUsersModal } from './UserModerationModals';
 
+const TUTORIAL_STEPS = [
+  {
+    icon: 'person-outline',
+    color: COLORS.accentCyan,
+    bg: COLORS.accentCyanSoft,
+    badgeKey: 'tutorialStep1Badge',
+    titleKey: 'tutorialStep1Title',
+    descKey: 'tutorialStep1Desc',
+  },
+  {
+    icon: 'add-circle-outline',
+    color: COLORS.txGreenBright,
+    bg: COLORS.txGreenSoft,
+    badgeKey: 'tutorialStep2Badge',
+    titleKey: 'tutorialStep2Title',
+    descKey: 'tutorialStep2Desc',
+  },
+  {
+    icon: 'mic',
+    color: COLORS.dangerRed,
+    bg: COLORS.dangerRedSoft,
+    badgeKey: 'tutorialStep3Badge',
+    titleKey: 'tutorialStep3Title',
+    descKey: 'tutorialStep3Desc',
+  },
+  {
+    icon: 'flag-outline',
+    color: COLORS.rxAmberBright,
+    bg: COLORS.rxAmberSoft,
+    badgeKey: 'tutorialStep4Badge',
+    titleKey: 'tutorialStep4Title',
+    descKey: 'tutorialStep4Desc',
+  },
+];
+
 export function GuideModal({ showGuide, handleCloseGuide, t }) {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (showGuide) setStepIndex(0);
+  }, [showGuide]);
+
+  const current = TUTORIAL_STEPS[stepIndex] || TUTORIAL_STEPS[0];
+  const isLastStep = stepIndex === TUTORIAL_STEPS.length - 1;
+
   return (
     <Modal visible={showGuide} animationType="fade" transparent={true} onRequestClose={handleCloseGuide}>
       <View style={styles.modalOverlay}>
         <View style={styles.guideCard}>
           <View style={styles.guideHeader}>
             <View style={styles.guideTitleRow}>
-              <Ionicons name="compass-outline" size={22} color="#38bdf8" />
+              <Ionicons name="compass-outline" size={20} color={COLORS.accentCyan} />
               <Text style={styles.guideTitleText}>{t('guideTitle')}</Text>
             </View>
             <TouchableOpacity onPress={handleCloseGuide} activeOpacity={0.75}>
-              <Ionicons name="close" size={22} color="#94a3b8" />
+              <Text style={styles.tutorialSkipText}>{t('tutorialSkip')}</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.guideStepsContainer}>
-            <View style={styles.guideStepRow}>
-              <View style={styles.guideStepIconBox}>
-                <Ionicons name="person-add-outline" size={18} color="#38bdf8" />
-              </View>
-              <View style={styles.guideStepContent}>
-                <Text style={styles.guideStepTitle}>{t('step1Title')}</Text>
-                <Text style={styles.guideStepDesc}>{t('step1Desc')}</Text>
-              </View>
-            </View>
+          <View style={styles.tutorialDotsRow}>
+            {TUTORIAL_STEPS.map((_, idx) => (
+              <View
+                key={idx}
+                style={[styles.tutorialDot, idx <= stepIndex && styles.tutorialDotActive]}
+              />
+            ))}
+          </View>
 
-            <View style={styles.guideStepRow}>
-              <View style={styles.guideStepIconBox}>
-                <Ionicons name="share-social-outline" size={18} color="#38bdf8" />
-              </View>
-              <View style={styles.guideStepContent}>
-                <Text style={styles.guideStepTitle}>{t('step2Title')}</Text>
-                <Text style={styles.guideStepDesc}>{t('step2Desc')}</Text>
-              </View>
+          <View style={styles.tutorialSpotlightBox}>
+            <View
+              style={[
+                styles.tutorialIconCircle,
+                { backgroundColor: current.bg, borderColor: current.color },
+              ]}
+            >
+              <Ionicons name={current.icon} size={28} color={current.color} />
             </View>
-
-            <View style={styles.guideStepRow}>
-              <View style={styles.guideStepIconBox}>
-                <Ionicons name="mic-outline" size={18} color="#38bdf8" />
-              </View>
-              <View style={styles.guideStepContent}>
-                <Text style={styles.guideStepTitle}>{t('step3Title')}</Text>
-                <Text style={styles.guideStepDesc}>{t('step3Desc')}</Text>
-              </View>
+            <View style={styles.tutorialBadgePill}>
+              <Text style={[styles.tutorialBadgeText, { color: current.color }]}>
+                {t(current.badgeKey)}
+              </Text>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.guideButton} onPress={handleCloseGuide} activeOpacity={0.85}>
-            <Text style={styles.guideButtonText}>{t('gotIt')}</Text>
-          </TouchableOpacity>
+          <Text style={styles.guideStepTitle}>{t(current.titleKey)}</Text>
+          <Text style={styles.guideStepDesc}>{t(current.descKey)}</Text>
+
+          <View style={styles.tutorialNavRow}>
+            {stepIndex > 0 && (
+              <TouchableOpacity
+                style={styles.tutorialBackBtn}
+                onPress={() => setStepIndex((prev) => Math.max(0, prev - 1))}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.tutorialBackBtnText}>{t('tutorialPrev')}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.guideButton}
+              onPress={() => {
+                if (isLastStep) {
+                  handleCloseGuide();
+                } else {
+                  setStepIndex((prev) => prev + 1);
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.guideButtonText}>
+                {isLastStep ? t('gotIt') : t('tutorialNext')}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>

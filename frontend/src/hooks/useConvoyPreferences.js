@@ -55,8 +55,11 @@ export function useConvoyPreferences({
             setShowEulaModal(true);
             setIsEulaFromSettings(false);
           } else {
-            const hasSeen = await AsyncStorage.getItem('hasSeenGuide');
-            if (!hasSeen) setShowGuide(true);
+            const hasSeen = await AsyncStorage.getItem('@convoy_tutorial_v1_seen');
+            if (!hasSeen) {
+              await AsyncStorage.setItem('@convoy_tutorial_v1_seen', 'true');
+              setShowGuide(true);
+            }
           }
         }
 
@@ -126,7 +129,7 @@ export function useConvoyPreferences({
   const handleCloseGuide = useCallback(async () => {
     setShowGuide(false);
     try {
-      await AsyncStorage.setItem('hasSeenGuide', 'true');
+      await AsyncStorage.setItem('@convoy_tutorial_v1_seen', 'true');
     } catch (e) {
       console.warn('[PREFS] Rehber durumu kaydedilemedi:', e.message);
     }
@@ -140,8 +143,11 @@ export function useConvoyPreferences({
     }
     setShowEulaModal(false);
     try {
-      const hasSeen = await AsyncStorage.getItem('hasSeenGuide');
-      if (!hasSeen) guideTimerRef.current = setTimeout(() => setShowGuide(true), 320);
+      const hasSeen = await AsyncStorage.getItem('@convoy_tutorial_v1_seen');
+      if (!hasSeen) {
+        await AsyncStorage.setItem('@convoy_tutorial_v1_seen', 'true');
+        guideTimerRef.current = setTimeout(() => setShowGuide(true), 320);
+      }
     } catch (e) {
       console.warn('[PREFS] Rehber kontrol hatasi:', e.message);
     }

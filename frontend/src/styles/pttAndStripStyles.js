@@ -1,14 +1,14 @@
 import { IS_SMALL_DEVICE } from '../constants/config';
 import { COLORS, RADIUS } from './theme';
 
-const PTT_OUTER_SIZE = IS_SMALL_DEVICE ? 156 : 182;
-const PTT_BUTTON_SIZE = IS_SMALL_DEVICE ? 136 : 160;
+const PTT_OUTER_SIZE = IS_SMALL_DEVICE ? 132 : 154;
+const PTT_BUTTON_SIZE = IS_SMALL_DEVICE ? 114 : 134;
 
 export const pttAndStripStyles = {
   convoyStripSection: {
     backgroundColor: COLORS.bgElevated,
     borderRadius: RADIUS.md,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: COLORS.borderDefault,

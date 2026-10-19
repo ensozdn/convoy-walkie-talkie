@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Text, View, SafeAreaView, StatusBar, Alert, Keyboard, Share, Animated } from 'react-native';
+import { Text, View, SafeAreaView, StatusBar, Alert, Keyboard, Share, Animated, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Clipboard from 'expo-clipboard';
-import { generateRoomCode } from './src/utils/roomCode';
+import { generateRoomCode, formatRoomCodeInput } from './src/utils/roomCode';
 import { styles } from './src/styles/styles';
 import { COLORS } from './src/styles/theme';
 import { useLocation } from './src/hooks/useLocation';
@@ -19,6 +19,8 @@ import { DriversTab } from './src/screens/DriversTab';
 import { SettingsTab } from './src/screens/SettingsTab';
 import { LobbyScreen } from './src/screens/LobbyScreen';
 import { RadioTab } from './src/screens/RadioTab';
+
+const LOGO_BADGE = require('./assets/logo-badge.png');
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('radio');
@@ -141,15 +143,17 @@ export default function App() {
 
   const handleJoinRoom = () => {
     const trimmedName = username.trim();
-    const trimmedCode = joinCode.trim().toUpperCase();
+    const formattedCode = formatRoomCodeInput(joinCode);
     if (!trimmedName) return Alert.alert(t('missingInfo'), t('enterNameAlert'));
-    if (!trimmedCode) return Alert.alert(t('missingInfo'), t('enterCodeAlert'));
+    if (formattedCode.length < 7) return Alert.alert(t('missingInfo'), t('enterCodeAlert'));
+    setJoinCode(formattedCode);
     prefs.saveUsername(trimmedName);
-    return enterRoom(trimmedName, trimmedCode);
+    return enterRoom(trimmedName, formattedCode);
   };
 
   const handleLeaveRoom = () => {
     leaveRoom();
+    setLobbyMode('home');
     setIsInRoom(false);
     setActiveSpeaker(null);
     setIsSpeakingLocally(false);
@@ -163,7 +167,12 @@ export default function App() {
     ]);
   };
 
-  const visibleParticipants = participants.filter((p) => !prefs.blockedUsers.includes(p.name));
+  const rawVisible = participants.filter((p) => !prefs.blockedUsers.includes(p.name));
+  const localDisplayName = username || usernameRef.current || t('you');
+  const visibleParticipants = rawVisible.length > 0
+    ? rawVisible
+    : [{ id: 'local-self', name: localDisplayName, coords: userLocation, isLocal: true, isLeader: true }];
+  const effectiveLeaderName = leaderName || visibleParticipants.find((p) => p.isLeader)?.name || localDisplayName;
 
   const handleRecenter = () => {
     setIsFollowing(true);
@@ -207,6 +216,7 @@ export default function App() {
 
   const modalOverlays = (
     <>
+      <Image source={LOGO_BADGE} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} fadeDuration={0} />
       <GuideModal showGuide={prefs.showGuide} handleCloseGuide={prefs.handleCloseGuide} t={t} />
       <EulaModal {...prefs} t={t} />
       <UserActionModal {...prefs} t={t} />
@@ -235,7 +245,7 @@ export default function App() {
     t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
     userLocation, visibleParticipants, activeSpeaker, mapRef, mapType, setMapType,
     isFollowing, setIsFollowing, handleFitAll, handleRecenter,
-    leaderName, username, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
+    leaderName: effectiveLeaderName, username: localDisplayName, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
     setSelectedUserForAction: prefs.setSelectedUserForAction, setUserActionStep: prefs.setUserActionStep,
   };
 
@@ -248,27 +258,32 @@ export default function App() {
           <Text style={styles.reconnectingBannerText}>{t('reconnectingBanner')}</Text>
         </View>
       )}
-      <Animated.View style={{ flex: 1, width: '100%', opacity: tabFadeAnim, transform: [{ translateY: tabSlideAnim }] }}>
-        {activeTab === 'map' ? (
+      <Animated.View style={{ flex: 1, width: '100%', opacity: tabFadeAnim }}>
+        <View style={{ flex: 1, display: activeTab === 'radio' ? 'flex' : 'none' }}>
+          <RadioTab
+            {...sharedTabProps} isChannelMuted={isChannelMuted} handleToggleMute={handleToggleMute}
+            handleCopyRoomCode={handleCopyRoomCode} confirmLeaveRoom={confirmLeaveRoom}
+            pulseAnim={pulseAnim} activePing={activePing} sendQuickPing={sendQuickPing}
+            handleTabPress={handleTabPress}
+          />
+        </View>
+        <View style={{ flex: 1, display: activeTab === 'map' ? 'flex' : 'none' }}>
           <MapTab {...sharedTabProps} />
-        ) : activeTab === 'drivers' ? (
+        </View>
+        <View style={{ flex: 1, display: activeTab === 'drivers' ? 'flex' : 'none' }}>
           <DriversTab {...sharedTabProps} handleTabPress={handleTabPress} />
-        ) : activeTab === 'settings' ? (
+        </View>
+        <View style={{ flex: 1, display: activeTab === 'settings' ? 'flex' : 'none' }}>
           <SettingsTab
             {...prefs} isEditingName={isEditingName} setEditingName={setEditingName}
             setIsEditingName={setIsEditingName} editingName={editingName}
             handleSaveName={handleSaveName} playBeepOff={playBeepOff}
           />
-        ) : (
-          <RadioTab
-            {...sharedTabProps} isChannelMuted={isChannelMuted} handleToggleMute={handleToggleMute}
-            handleCopyRoomCode={handleCopyRoomCode} confirmLeaveRoom={confirmLeaveRoom}
-            pulseAnim={pulseAnim} activePing={activePing} sendQuickPing={sendQuickPing}
-          />
-        )}
+        </View>
       </Animated.View>
       <BottomTabBar activeTab={activeTab} handleTabPress={handleTabPress} t={t} />
       {modalOverlays}
     </View>
   );
 }
+

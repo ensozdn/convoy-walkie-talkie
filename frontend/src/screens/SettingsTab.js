@@ -60,7 +60,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="person" size={18} color={COLORS.accentCyan} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('driverNameLabel')}</Text>
                 {!isEditingName && <Text style={styles.settingsRowSub}>{username || '—'}</Text>}
               </View>
@@ -114,7 +114,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="radio" size={18} color={COLORS.accentCyan} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('rogerBeepTitle')}</Text>
                 <Text style={styles.settingsRowSub}>{t('rogerBeepSub')}</Text>
               </View>
@@ -138,7 +138,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="document-text" size={18} color={COLORS.accentCyan} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('termsOfUse')}</Text>
                 <Text style={styles.settingsRowSub}>{t('termsOfUseSub')}</Text>
               </View>
@@ -151,7 +151,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="shield-checkmark" size={18} color={COLORS.txGreenBright} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('communityGuidelines')}</Text>
                 <Text style={styles.settingsRowSub}>{t('communityGuidelinesSub')}</Text>
               </View>
@@ -168,7 +168,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="mail" size={18} color={COLORS.rxAmberBright} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('supportMail')}</Text>
                 <Text style={[styles.settingsRowSub, { color: COLORS.accentCyan }]}>{t('supportMailSub')}</Text>
               </View>
@@ -185,7 +185,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="ban" size={18} color={COLORS.dangerRed} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('blockedUsersTitle')}</Text>
                 <Text style={styles.settingsRowSub}>{t('blockedUsersCount', blockedUsers.length)}</Text>
               </View>
@@ -203,7 +203,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="help-circle" size={18} color={COLORS.accentCyan} />
               </View>
-              <Text style={styles.settingsRowTitle}>{t('guideTitle')}</Text>
+              <Text style={[styles.settingsRowTitle, { flex: 1 }]}>{t('guideTitle')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={COLORS.textDim} />
           </TouchableOpacity>
@@ -218,7 +218,7 @@ export function SettingsTab({
               <View style={styles.settingsIconBox}>
                 <Ionicons name="information-circle" size={18} color={COLORS.accentCyan} />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.settingsRowTitle}>{t('title')}</Text>
                 <Text style={styles.settingsRowSub}>{t('appVersionSub')}</Text>
               </View>

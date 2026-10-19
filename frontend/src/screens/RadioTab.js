@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { PROVIDER_DEFAULT, Marker } from 'react-native-maps';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 import { formatDriverDistance, formatDriverSpeed } from '../utils/geo';
@@ -18,6 +19,8 @@ const PING_ALERT_KEYS = {
   hazard: 'pingAlertHazard',
   ok: 'pingAlertOk',
 };
+
+const SIGNAL_BAR_HEIGHTS = [7, 13, 18, 11, 15];
 
 function resolveRadioVisualState({ connectionState, activeSpeaker, isSpeakingLocally, isChannelMuted, t }) {
   const someoneElseSpeaking = Boolean(activeSpeaker && !activeSpeaker.isLocal);
@@ -74,7 +77,7 @@ export function RadioTab({
   connectionState, activeSpeaker, t, isSpeakingLocally, isChannelMuted, handleToggleMute,
   roomCode, handleCopyRoomCode, visibleParticipants, confirmLeaveRoom,
   setSelectedUserForAction, setUserActionStep, userLocation, pulseAnim,
-  handleTalkStart, handleTalkEnd, activePing, sendQuickPing,
+  handleTalkStart, handleTalkEnd, activePing, sendQuickPing, waypoint, handleTabPress,
 }) {
   const isConnected = connectionState === 'connected';
   const someoneElseSpeaking = Boolean(activeSpeaker && !activeSpeaker.isLocal);
@@ -85,6 +88,7 @@ export function RadioTab({
   const speakerDistance = speakerParticipant
     ? formatDriverDistance(userLocation, speakerParticipant.coords, false)
     : null;
+  const waypointDistance = waypoint ? formatDriverDistance(userLocation, waypoint, false) : null;
 
   const ui = resolveRadioVisualState({ connectionState, activeSpeaker, isSpeakingLocally, isChannelMuted, t });
   const signalDotColor = isConnected
@@ -92,6 +96,7 @@ export function RadioTab({
     : connectionState === 'reconnecting'
       ? COLORS.rxAmberBright
       : COLORS.dangerRed;
+  const isAudioActive = Boolean(isSpeakingLocally || someoneElseSpeaking);
 
   return (
     <View style={styles.radioCockpitContainer}>
@@ -102,10 +107,6 @@ export function RadioTab({
             <Text style={styles.hudRoomCodeText}>#{roomCode}</Text>
             <Ionicons name="copy-outline" size={12} color={COLORS.textMuted} />
           </TouchableOpacity>
-          <View style={styles.hudCountBadge}>
-            <Ionicons name="people" size={13} color={COLORS.accentCyan} />
-            <Text style={styles.hudCountText}>{t('people', visibleParticipants.length)}</Text>
-          </View>
         </View>
 
         <View style={styles.hudHeaderRight}>
@@ -120,7 +121,6 @@ export function RadioTab({
               color={isChannelMuted ? COLORS.rxAmberBright : COLORS.accentCyan}
             />
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.leaveButton} onPress={confirmLeaveRoom} activeOpacity={0.8}>
             <Ionicons name="power" size={13} color={COLORS.dangerRed} />
             <Text style={styles.leaveButtonText}>{t('leave')}</Text>
@@ -132,17 +132,33 @@ export function RadioTab({
         <View style={styles.channelMainRow}>
           <View style={styles.channelMainLeft}>
             <View style={[styles.channelWaveBadge, { backgroundColor: ui.monitorBadgeBg }]}>
-              <Ionicons name={ui.monitorIcon} size={22} color={ui.monitorBadgeColor} />
+              <Ionicons name={ui.monitorIcon} size={20} color={ui.monitorBadgeColor} />
             </View>
             <Text style={[styles.channelPrimaryText, { color: ui.monitorBadgeColor }]} numberOfLines={1}>
               {ui.monitorPrimaryText}
             </Text>
           </View>
-          {speakerDistance && (
-            <View style={styles.channelDistanceBadge}>
-              <Text style={styles.channelDistanceBadgeText}>{speakerDistance}</Text>
+          <View style={styles.channelRightRow}>
+            {speakerDistance && (
+              <View style={styles.channelDistanceBadge}>
+                <Text style={styles.channelDistanceBadgeText}>{speakerDistance}</Text>
+              </View>
+            )}
+            <View style={styles.channelBarsRow}>
+              {SIGNAL_BAR_HEIGHTS.map((h, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.channelBar,
+                    {
+                      height: isAudioActive ? h : 5 + (idx % 2) * 3,
+                      backgroundColor: isAudioActive ? ui.monitorBadgeColor : COLORS.borderHighlight,
+                    },
+                  ]}
+                />
+              ))}
             </View>
-          )}
+          </View>
         </View>
       </View>
 
@@ -204,14 +220,40 @@ export function RadioTab({
         </ScrollView>
       </View>
 
+      <View style={styles.radioMiniMapCard}>
+        <View style={styles.radioMiniMapHeader}>
+          <View style={styles.radioMiniMapHeaderLeft}>
+            <Ionicons name={waypoint ? 'flag' : 'navigate-circle-outline'} size={13} color={waypoint ? COLORS.rxAmberBright : COLORS.accentCyan} />
+            <Text style={[styles.radioMiniMapTitle, waypoint && { color: COLORS.rxAmberBright }]} numberOfLines={1}>
+              {waypoint ? `${t('waypointTitle')}${waypointDistance ? ` • ${waypointDistance}` : ''}` : t('miniMapTitle')}
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.radioMiniMapExpandBtn} onPress={() => handleTabPress && handleTabPress('map')} activeOpacity={0.8}>
+            <Text style={styles.radioMiniMapExpandText}>{t('openFullMap')}</Text>
+            <Ionicons name="expand-outline" size={11} color={COLORS.accentCyan} />
+          </TouchableOpacity>
+        </View>
+        <MapView
+          style={styles.radioMiniMapView}
+          provider={PROVIDER_DEFAULT}
+          region={userLocation}
+          showsUserLocation={true}
+          showsMyLocationButton={false}
+          pitchEnabled={false}
+          rotateEnabled={false}
+        >
+          {visibleParticipants.map((p) => (
+            <Marker key={p.id} coordinate={p.coords || userLocation} title={p.name} />
+          ))}
+          {waypoint && (
+            <Marker coordinate={{ latitude: waypoint.latitude, longitude: waypoint.longitude }} title={t('waypointTitle')} pinColor={COLORS.rxAmber} />
+          )}
+        </MapView>
+      </View>
+
       <View style={styles.quickPingRow}>
         {QUICK_PING_ITEMS.map((item) => (
-          <TouchableOpacity
-            key={item.type}
-            style={styles.quickPingBtn}
-            onPress={() => sendQuickPing(item.type)}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity key={item.type} style={styles.quickPingBtn} onPress={() => sendQuickPing(item.type)} activeOpacity={0.8}>
             <Ionicons name={item.icon} size={15} color={item.color} />
             <Text style={styles.quickPingBtnText}>{t(item.labelKey)}</Text>
           </TouchableOpacity>
@@ -221,9 +263,7 @@ export function RadioTab({
       <View style={styles.pttContainer}>
         <View style={styles.pttOuterChassis}>
           {activeSpeaker && (
-            <Animated.View
-              style={[styles.pulseRing, { borderColor: ui.pttRingColor, transform: [{ scale: pulseAnim }] }]}
-            />
+            <Animated.View style={[styles.pulseRing, { borderColor: ui.pttRingColor, transform: [{ scale: pulseAnim }] }]} />
           )}
           <TouchableOpacity
             style={[
@@ -236,11 +276,7 @@ export function RadioTab({
             disabled={pttDisabled}
             activeOpacity={0.85}
           >
-            <Ionicons
-              name={isSpeakingLocally ? 'mic' : someoneElseSpeaking ? 'volume-high' : 'mic-outline'}
-              size={36}
-              color={COLORS.white}
-            />
+            <Ionicons name={isSpeakingLocally ? 'mic' : someoneElseSpeaking ? 'volume-high' : 'mic-outline'} size={32} color={COLORS.white} />
             <Text style={styles.pttText}>{ui.pttText}</Text>
           </TouchableOpacity>
         </View>
@@ -249,3 +285,6 @@ export function RadioTab({
     </View>
   );
 }
+
+
+
