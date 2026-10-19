@@ -116,7 +116,7 @@ export const EN_TRANSLATIONS = {
   toastAdFreeGranted: 'Ad-free cockpit activated for 24 hours',
   rewardedBtnTitle: '24h Ad-Free Driving',
   rewardedBtnSub: 'Watch a short video, enjoy 24h zero ads',
-  adFreeActiveBadge: 'AD-FREE ACTIVE',
+  adFreeActiveBadge: 'AD-FREE MODE',
   adFreeRemaining: (h) => `${h}h remaining`,
   experienceSection: 'EXPERIENCE',
   watchAdPill: 'WATCH VIDEO',

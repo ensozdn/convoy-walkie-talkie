@@ -75,7 +75,7 @@ export function RewardedAdButton({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.adFreeActiveTitle}>
-            {typeof t === 'function' ? t('adFreeActiveBadge') : 'REKLAMSIZ MOD AKTİF'}
+            {typeof t === 'function' ? t('adFreeActiveBadge') : 'REKLAMSIZ MOD'}
           </Text>
           <Text style={styles.adFreeActiveSub}>
             {typeof t === 'function' ? t('adFreeRemaining', remainingHours) : `${remainingHours} saat kaldı`}

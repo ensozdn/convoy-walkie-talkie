@@ -136,7 +136,7 @@ export const TRANSLATIONS = {
     toastAdFreeGranted: '24 saat boyunca reklamsız kokpit aktif edildi',
     rewardedBtnTitle: '24 Saat Reklamsız Sürüş',
     rewardedBtnSub: 'Kısa video izle, 24 saat sıfır reklam kullan',
-    adFreeActiveBadge: 'REKLAMSIZ MOD AKTİF',
+    adFreeActiveBadge: 'REKLAMSIZ MOD',
     adFreeRemaining: (h) => `${h} saat kaldı`,
     experienceSection: 'DENEYİM',
     watchAdPill: 'VİDEO İZLE',
