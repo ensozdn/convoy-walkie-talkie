@@ -169,6 +169,7 @@ export function LobbyScreen({
                   isAdFree={ads?.isAdFree}
                   remainingHours={ads?.adFreeRemainingHours}
                   onPress={ads?.showRewardedAd}
+                  onResetTest={ads?.resetAdFreeForTest}
                   isLoading={ads?.isRewardedLoading}
                   t={t}
                   style={{ marginTop: 10 }}

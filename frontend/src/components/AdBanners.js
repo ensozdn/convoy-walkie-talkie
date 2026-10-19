@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
-import { getAdUnitId } from '../constants/ads';
+import { getAdUnitId, getNativeAdsModule, ADS_CONFIG } from '../constants/ads';
 import { COLORS, RADIUS } from '../styles/theme';
 
 export function ConvoyBanner({ isAdFree, style }) {
@@ -10,6 +9,27 @@ export function ConvoyBanner({ isAdFree, style }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   if (isAdFree || hasError) return null;
+
+  const nativeAds = getNativeAdsModule();
+
+  if (!nativeAds) {
+    return (
+      <View style={[styles.bannerContainer, style]}>
+        <View style={styles.mockBannerBox}>
+          <View style={styles.mockAdTag}>
+            <Text style={styles.mockAdTagText}>AD</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.mockBannerTitle}>Google AdMob Test Banner (320x50)</Text>
+            <Text style={styles.mockBannerSub}>Canlı derlemede gerçek AdMob reklamı gösterilir</Text>
+          </View>
+          <Ionicons name="open-outline" size={14} color={COLORS.textMuted} />
+        </View>
+      </View>
+    );
+  }
+
+  const { BannerAd, BannerAdSize } = nativeAds;
 
   return (
     <View style={[styles.bannerContainer, style]}>
@@ -36,13 +56,18 @@ export function RewardedAdButton({
   isAdFree,
   remainingHours,
   onPress,
+  onResetTest,
   isLoading,
   t,
   style,
 }) {
   if (isAdFree) {
     return (
-      <View style={[styles.adFreeActiveCard, style]}>
+      <TouchableOpacity
+        style={[styles.adFreeActiveCard, style]}
+        onLongPress={ADS_CONFIG.IS_TEST_MODE || __DEV__ ? onResetTest : undefined}
+        activeOpacity={0.9}
+      >
         <View style={styles.adFreeIconCircle}>
           <Ionicons name="shield-checkmark" size={18} color={COLORS.txGreenBright} />
         </View>
@@ -57,7 +82,7 @@ export function RewardedAdButton({
         <View style={styles.activePill}>
           <Text style={styles.activePillText}>24H</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   }
 
@@ -95,6 +120,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 6,
     overflow: 'hidden',
+  },
+  mockBannerBox: {
+    width: '100%',
+    height: 50,
+    backgroundColor: COLORS.bgInput,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.borderDefault,
+    borderStyle: 'dashed',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  mockAdTag: {
+    backgroundColor: COLORS.rxAmberSoft,
+    borderWidth: 1,
+    borderColor: COLORS.rxAmber,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  mockAdTagText: {
+    color: COLORS.rxAmberBright,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  mockBannerTitle: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  mockBannerSub: {
+    color: COLORS.textDim,
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 1,
   },
   sponsorBadge: {
     alignSelf: 'flex-start',

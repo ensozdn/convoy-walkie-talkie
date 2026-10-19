@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { styles } from '../styles/styles';
+import { COLORS } from '../styles/theme';
 import { MiniLangSelector } from '../components/LangSelectors';
 import { getVehicleIcon } from '../utils/avatar';
 import { ConvoyBanner, RewardedAdButton } from '../components/AdBanners';
@@ -252,6 +253,7 @@ export const SettingsTab = React.memo(function SettingsTab({
           isAdFree={ads?.isAdFree}
           remainingHours={ads?.adFreeRemainingHours}
           onPress={ads?.showRewardedAd}
+          onResetTest={ads?.resetAdFreeForTest}
           isLoading={ads?.isRewardedLoading}
           t={t}
         />
