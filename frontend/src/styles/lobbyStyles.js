@@ -12,6 +12,11 @@ export const lobbyStyles = {
     flex: 1, paddingHorizontal: IS_SMALL_DEVICE ? 16 : 22,
     paddingTop: Platform.OS === 'android' ? 14 : 8, paddingBottom: 16, justifyContent: 'space-between',
   },
+  lobbySubCardCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    width: '100%',
+  },
   lobbyTopBar: {
     width: '100%', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 4,
   },

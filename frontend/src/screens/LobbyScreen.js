@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
@@ -67,31 +69,37 @@ export function LobbyScreen({
           {topBar}
 
           {lobbyMode === 'create' ? (
-            <LobbyCreateCard
-              fadeAnim={fadeAnim}
-              slideAnim={slideAnim}
-              setLobbyMode={setLobbyMode}
-              t={t}
-              handleCopyCode={handleCopyCode}
-              copied={copied}
-              generatedCode={generatedCode}
-              handleEnterCreatedRoom={handleEnterCreatedRoom}
-              handleShareCode={handleShareCode}
-              isAdFree={ads?.isAdFree}
-            />
+            <View style={styles.lobbySubCardCenter}>
+              <LobbyCreateCard
+                fadeAnim={fadeAnim}
+                slideAnim={slideAnim}
+                setLobbyMode={setLobbyMode}
+                t={t}
+                handleCopyCode={handleCopyCode}
+                copied={copied}
+                generatedCode={generatedCode}
+                handleEnterCreatedRoom={handleEnterCreatedRoom}
+                handleShareCode={handleShareCode}
+              />
+            </View>
           ) : lobbyMode === 'join' ? (
-            <LobbyJoinCard
-              fadeAnim={fadeAnim}
-              slideAnim={slideAnim}
-              setLobbyMode={setLobbyMode}
-              t={t}
-              isInputFocused={isInputFocused}
-              setIsInputFocused={setIsInputFocused}
-              joinCode={joinCode}
-              setJoinCode={setJoinCode}
-              handleJoinRoom={handleJoinRoom}
-              recentCodes={recentCodes}
-            />
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={styles.lobbySubCardCenter}
+            >
+              <LobbyJoinCard
+                fadeAnim={fadeAnim}
+                slideAnim={slideAnim}
+                setLobbyMode={setLobbyMode}
+                t={t}
+                isInputFocused={isInputFocused}
+                setIsInputFocused={setIsInputFocused}
+                joinCode={joinCode}
+                setJoinCode={setJoinCode}
+                handleJoinRoom={handleJoinRoom}
+                recentCodes={recentCodes}
+              />
+            </KeyboardAvoidingView>
           ) : (
             <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
               <View style={styles.lobbyHeroSection}>
