@@ -66,6 +66,7 @@ export function LobbyScreen({
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor={COLORS.bgPrimary} />
         <View style={styles.lobbyOuter}>
+          <View style={styles.lobbyAmbientGlow} pointerEvents="none" />
           {topBar}
 
           {lobbyMode === 'create' ? (
@@ -181,6 +182,7 @@ export function LobbyScreen({
                   isLoading={ads?.isRewardedLoading}
                   t={t}
                   style={{ marginTop: 10 }}
+                  hideWhenActive={true}
                 />
               </View>
             </Animated.View>

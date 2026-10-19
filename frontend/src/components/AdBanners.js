@@ -60,8 +60,10 @@ export function RewardedAdButton({
   isLoading,
   t,
   style,
+  hideWhenActive = false,
 }) {
   if (isAdFree) {
+    if (hideWhenActive) return null;
     return (
       <TouchableOpacity
         style={[styles.adFreeActiveCard, style]}
