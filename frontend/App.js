@@ -146,6 +146,13 @@ export default function App() {
     return enterRoom(trimmedName, formattedCode);
   };
 
+  const handleQuickJoinRoom = (code) => {
+    const trimmedName = username.trim() || usernameRef.current;
+    if (!trimmedName) return Alert.alert(t('missingInfo'), t('enterNameAlert'));
+    prefs.saveUsername(trimmedName);
+    return enterRoom(trimmedName, code);
+  };
+
   const handleLeaveRoom = () => {
     leaveRoom();
     setLobbyMode('home');
@@ -239,7 +246,9 @@ export default function App() {
         copied={copied} generatedCode={generatedCode} handleShareCode={handleShareCode}
         handleEnterCreatedRoom={handleEnterCreatedRoom} isInputFocused={isInputFocused}
         setIsInputFocused={setIsInputFocused} joinCode={joinCode} setJoinCode={setJoinCode}
-        handleJoinRoom={handleJoinRoom} overlays={modalOverlays} ads={ads}
+        handleJoinRoom={handleJoinRoom}
+        handleQuickJoinRoom={handleQuickJoinRoom}
+        overlays={modalOverlays} ads={ads}
       />
     );
   }

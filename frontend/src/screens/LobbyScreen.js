@@ -46,6 +46,7 @@ export function LobbyScreen({
   joinCode,
   setJoinCode,
   handleJoinRoom,
+  handleQuickJoinRoom,
   recentCodes,
   overlays,
   ads,
@@ -144,6 +145,28 @@ export function LobbyScreen({
                       />
                     </View>
                   </View>
+
+                  {recentCodes && recentCodes.length > 0 && (
+                    <TouchableOpacity
+                      style={styles.quickJoinCard}
+                      onPress={() => handleQuickJoinRoom?.(recentCodes[0])}
+                      activeOpacity={0.85}
+                    >
+                      <View style={styles.quickJoinLeft}>
+                        <View style={styles.quickJoinIconCircle}>
+                          <Ionicons name="flash" size={16} color={COLORS.accentCyan} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.quickJoinSub}>{t('lastConvoyLabel')}</Text>
+                          <Text style={styles.quickJoinCode}>{recentCodes[0]}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.quickJoinPill}>
+                        <Text style={styles.quickJoinPillText}>{t('quickConnect')}</Text>
+                        <Ionicons name="arrow-forward" size={13} color={COLORS.bgPrimary} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
 
                   <View style={styles.lobbyActionsStack}>
                     <TouchableOpacity style={styles.actionCardPrimary} onPress={handleCreateRoom} activeOpacity={0.85}>

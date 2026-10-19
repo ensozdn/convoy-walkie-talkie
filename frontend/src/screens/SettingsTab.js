@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,7 +8,7 @@ import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 import { MiniLangSelector } from '../components/LangSelectors';
 import { getVehicleIcon } from '../utils/avatar';
-import { ConvoyBanner, RewardedAdButton } from '../components/AdBanners';
+import { ConvoyBanner } from '../components/AdBanners';
 
 export const SettingsTab = React.memo(function SettingsTab({
   lang, changeLanguage, isEditingName, username, setEditingName, setIsEditingName,
@@ -248,17 +248,40 @@ export const SettingsTab = React.memo(function SettingsTab({
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-        <RewardedAdButton
-          isAdFree={ads?.isAdFree}
-          remainingHours={ads?.adFreeRemainingHours}
-          onPress={ads?.showRewardedAd}
-          onResetTest={ads?.resetAdFreeForTest}
-          isLoading={ads?.isRewardedLoading}
-          t={t}
-        />
-        <ConvoyBanner isAdFree={ads?.isAdFree} style={{ marginTop: 8, marginBottom: 24 }} />
+      <View style={styles.settingsSection}>
+        <Text style={styles.settingsSectionLabel}>{t('experienceSection')}</Text>
+        <View style={styles.settingsCard}>
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={ads?.showRewardedAd}
+            onLongPress={ads?.resetAdFreeForTest}
+            activeOpacity={0.8}
+            disabled={ads?.isRewardedLoading}
+          >
+            <View style={styles.settingsRowLeft}>
+              <View style={[styles.settingsIconBox, ads?.isAdFree && { backgroundColor: COLORS.txGreenSoft, borderColor: COLORS.txGreenBright }]}>
+                <Ionicons name={ads?.isAdFree ? 'shield-checkmark' : 'play-circle-outline'} size={18} color={ads?.isAdFree ? COLORS.txGreenBright : COLORS.accentCyan} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingsRowTitle}>{ads?.isAdFree ? t('adFreeActiveBadge') : t('rewardedBtnTitle')}</Text>
+                <Text style={styles.settingsRowSub}>{ads?.isAdFree ? t('adFreeRemaining', ads?.adFreeRemainingHours) : t('rewardedBtnSub')}</Text>
+              </View>
+            </View>
+            {ads?.isAdFree ? (
+              <View style={styles.adFreePillBadge}><Text style={styles.adFreePillText}>24H AKTİF</Text></View>
+            ) : ads?.isRewardedLoading ? (
+              <ActivityIndicator size="small" color={COLORS.accentCyan} />
+            ) : (
+              <View style={styles.watchVideoPillBadge}>
+                <Ionicons name="play" size={10} color={COLORS.bgPrimary} />
+                <Text style={styles.watchVideoPillText}>{t('watchAdPill')}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
+
+      <ConvoyBanner isAdFree={ads?.isAdFree} style={{ marginTop: 4, marginBottom: 24, paddingHorizontal: 16 }} />
     </ScrollView>
   );
 });

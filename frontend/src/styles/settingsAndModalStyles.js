@@ -214,5 +214,15 @@ export const settingsAndModalStyles = {
     paddingVertical: 13, alignItems: 'center', justifyContent: 'center',
   },
   guideButtonText: { color: COLORS.bgPrimary, fontSize: 14, fontWeight: '900' },
+  adFreePillBadge: {
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.txGreenSoft, borderWidth: 1, borderColor: COLORS.txGreenBright,
+  },
+  adFreePillText: { color: COLORS.txGreenBright, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  watchVideoPillBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 9, paddingVertical: 5, borderRadius: RADIUS.pill, backgroundColor: COLORS.accentCyan,
+  },
+  watchVideoPillText: { color: COLORS.bgPrimary, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 };
 
