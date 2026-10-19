@@ -12,6 +12,7 @@ import { useRoomSocket } from './src/hooks/useRoomSocket';
 import { useConvoyPreferences } from './src/hooks/useConvoyPreferences';
 import { useUIAnimations } from './src/hooks/useUIAnimations';
 import { useConvoyAds } from './src/hooks/useConvoyAds';
+import { useDriveSession } from './src/hooks/useDriveSession';
 import { AppModals } from './src/components/AppModals';
 import { BottomTabBar } from './src/components/BottomTabBar';
 import { MapTab } from './src/screens/MapTab';
@@ -45,6 +46,7 @@ export default function App() {
   }, []);
 
   const { userLocation, sendLocationUpdate } = useLocation({ isInRoom, socketRef, roomCodeRef, usernameRef });
+  const driveSession = useDriveSession({ isInRoom, userLocation, roomCode });
 
   const {
     isSpeakingLocally, setIsSpeakingLocally, isChannelMuted, toggleChannelMute,
@@ -154,6 +156,7 @@ export default function App() {
   };
 
   const handleLeaveRoom = () => {
+    driveSession.captureSummary();
     leaveRoom();
     setLobbyMode('home');
     setIsInRoom(false);
@@ -225,15 +228,15 @@ export default function App() {
     isFollowing, setIsFollowing, handleFitAll, handleRecenter,
     leaderName: effectiveLeaderName, username: localDisplayName, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
     setSelectedUserForAction: prefs.setSelectedUserForAction, setUserActionStep: prefs.setUserActionStep,
-    onOpenAvatarModal: () => prefs.setShowAvatarModal(true), ads,
+    onOpenAvatarModal: () => prefs.setShowAvatarModal(true), ads, driveSession,
   }), [
     t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
     userLocation, visibleParticipants, activeSpeaker, mapType,
     isFollowing, effectiveLeaderName, localDisplayName, waypoint,
-    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal, ads,
+    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal, ads, driveSession,
   ]);
 
-  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} />;
+  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} driveSession={driveSession} />;
 
   if (!isInRoom) {
     return (

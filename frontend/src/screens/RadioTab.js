@@ -73,7 +73,7 @@ export const RadioTab = React.memo(function RadioTab({
   roomCode, handleCopyRoomCode, visibleParticipants, confirmLeaveRoom,
   setSelectedUserForAction, setUserActionStep, userLocation, pulseAnim,
   handleTalkStart, handleTalkEnd, activePing, sendQuickPing, waypoint, handleTabPress,
-  onOpenAvatarModal,
+  onOpenAvatarModal, driveSession,
 }) {
   const isConnected = connectionState === 'connected';
   const someoneElseSpeaking = Boolean(activeSpeaker && !activeSpeaker.isLocal);
@@ -121,6 +121,32 @@ export const RadioTab = React.memo(function RadioTab({
             <Ionicons name="power" size={13} color={COLORS.dangerRed} />
             <Text style={styles.leaveButtonText}>{t('leave')}</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.cockpitTelemetryBar}>
+        <View style={styles.cockpitSpeedometer}>
+          <Text style={styles.cockpitSpeedValue}>{driveSession?.currentSpeedKmh ?? userLocation?.speedKmh ?? 0}</Text>
+          <View style={styles.cockpitSpeedUnitCol}>
+            <Text style={styles.cockpitSpeedUnit}>KM/S</Text>
+            <Text style={styles.cockpitSpeedLabel}>{t('gpsSpeed')}</Text>
+          </View>
+        </View>
+        <View style={styles.cockpitStatsDivider} />
+        <View style={styles.cockpitStatItem}>
+          <Ionicons name="navigate-outline" size={13} color={COLORS.accentCyan} />
+          <View>
+            <Text style={styles.cockpitStatLabel}>{t('tripDistance')}</Text>
+            <Text style={styles.cockpitStatValue}>{driveSession?.sessionDistanceKm ?? '0.0'} km</Text>
+          </View>
+        </View>
+        <View style={styles.cockpitStatsDivider} />
+        <View style={styles.cockpitStatItem}>
+          <Ionicons name="timer-outline" size={13} color={COLORS.rxAmberBright} />
+          <View>
+            <Text style={styles.cockpitStatLabel}>{t('tripDuration')}</Text>
+            <Text style={styles.cockpitStatValue}>{driveSession?.sessionDurationMinutes ?? 1} dk</Text>
+          </View>
         </View>
       </View>
 

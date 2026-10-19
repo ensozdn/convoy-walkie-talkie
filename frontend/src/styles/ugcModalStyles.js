@@ -104,4 +104,37 @@ export const ugcModalStyles = {
     fontWeight: '800',
     letterSpacing: 0.3,
   },
+  driveSummaryCard: {
+    width: '100%', maxWidth: 400, backgroundColor: COLORS.bgElevated,
+    borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.borderDefault,
+    alignItems: 'center',
+  },
+  driveSummaryHeader: { alignItems: 'center', marginBottom: 18 },
+  driveSummaryIconBox: {
+    width: 52, height: 52, borderRadius: 16, backgroundColor: COLORS.accentCyanSoft,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+    borderWidth: 1, borderColor: COLORS.accentCyan,
+  },
+  driveSummaryTitle: { color: COLORS.white, fontSize: 18, fontWeight: '900', letterSpacing: 0.5, marginBottom: 4 },
+  driveSummarySub: { color: COLORS.textMuted, fontSize: 12, fontWeight: '500', textAlign: 'center' },
+  driveSummaryStatsRow: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, padding: 14,
+    borderWidth: 1, borderColor: COLORS.borderDefault, marginBottom: 18, gap: 8,
+  },
+  driveSummaryStatItem: { flex: 1, alignItems: 'center', gap: 4 },
+  driveSummaryStatValue: { color: COLORS.white, fontSize: 15, fontWeight: '900' },
+  driveSummaryStatLabel: { color: COLORS.textDim, fontSize: 10, fontWeight: '800', textAlign: 'center' },
+  driveSummaryActions: { width: '100%', gap: 10 },
+  driveSummaryShareBtn: {
+    width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: COLORS.accentCyan, borderRadius: RADIUS.md, paddingVertical: 13,
+  },
+  driveSummaryShareText: { color: COLORS.bgPrimary, fontSize: 14, fontWeight: '900' },
+  driveSummaryCloseBtn: {
+    width: '100%', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, paddingVertical: 12,
+    borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  driveSummaryCloseText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '800' },
 };

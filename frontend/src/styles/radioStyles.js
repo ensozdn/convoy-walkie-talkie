@@ -135,5 +135,21 @@ export const radioStyles = {
   },
   radioMiniMapExpandText: { color: COLORS.accentCyan, fontSize: 10, fontWeight: '800' },
   radioMiniMapView: { flex: 1, width: '100%' },
+  cockpitTelemetryBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: COLORS.bgElevated, borderRadius: RADIUS.md,
+    paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: COLORS.borderDefault,
+  },
+  cockpitSpeedometer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  cockpitSpeedValue: {
+    color: COLORS.white, fontSize: IS_SMALL_DEVICE ? 20 : 24, fontWeight: '900', letterSpacing: -0.5,
+  },
+  cockpitSpeedUnitCol: { justifyContent: 'center' },
+  cockpitSpeedUnit: { color: COLORS.accentCyan, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  cockpitSpeedLabel: { color: COLORS.textDim, fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
+  cockpitStatsDivider: { width: 1, height: 22, backgroundColor: COLORS.borderSubtle },
+  cockpitStatItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  cockpitStatLabel: { color: COLORS.textDim, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  cockpitStatValue: { color: COLORS.white, fontSize: 12, fontWeight: '800' },
 };
 

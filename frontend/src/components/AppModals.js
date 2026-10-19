@@ -2,11 +2,12 @@ import React from 'react';
 import { Image } from 'react-native';
 import { GuideModal, EulaModal, UserActionModal, BlockedUsersModal } from './Modals';
 import { AvatarCustomizationModal } from './AvatarCustomizationModal';
+import { DriveSummaryModal } from './DriveSummaryModal';
 import { Toast } from './Toast';
 
 const LOGO_BADGE = require('../../assets/logo-badge.png');
 
-export function AppModals({ prefs, t, username }) {
+export function AppModals({ prefs, t, username, driveSession }) {
   return (
     <>
       <Image source={LOGO_BADGE} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} fadeDuration={0} />
@@ -23,6 +24,7 @@ export function AppModals({ prefs, t, username }) {
         username={username}
         t={t}
       />
+      <DriveSummaryModal summaryData={driveSession?.summaryData} onClose={driveSession?.closeSummary} t={t} />
       <Toast toastMessage={prefs.toastMessage} toastAnim={prefs.toastAnim} />
     </>
   );
