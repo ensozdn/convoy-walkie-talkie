@@ -15,6 +15,8 @@ export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisc
         roomName: string;
         participantName: string;
         coords?: Coordinates;
+        avatarColor?: string;
+        vehicleType?: string;
     }): {
         success: boolean;
     };
@@ -22,6 +24,16 @@ export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisc
         roomName: string;
         participantName: string;
         coords?: Coordinates;
+        avatarColor?: string;
+        vehicleType?: string;
+    }): {
+        success: boolean;
+    };
+    handleUpdateProfile(client: Socket, payload: {
+        roomName: string;
+        participantName: string;
+        avatarColor?: string;
+        vehicleType?: string;
     }): {
         success: boolean;
     };
@@ -82,6 +94,21 @@ export declare class EventsGateway implements OnGatewayConnection, OnGatewayDisc
     } | {
         success: boolean;
         waypoint: import("./room-registry").RoomWaypoint | null;
+    };
+    handleUserReported(payload: {
+        reportedUser?: string;
+        reason?: string;
+        reportedBy?: string;
+        room?: string;
+    }): {
+        success: boolean;
+    };
+    handleUserBlockedReport(payload: {
+        blockedUser?: string;
+        reportedBy?: string;
+        room?: string;
+    }): {
+        success: boolean;
     };
     private sweepStaleParticipants;
     private broadcastRoomState;

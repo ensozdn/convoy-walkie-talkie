@@ -263,6 +263,18 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     return { success: true, waypoint };
   }
 
+  @SubscribeMessage('user_reported')
+  handleUserReported(@MessageBody() payload: { reportedUser?: string; reason?: string; reportedBy?: string; room?: string }) {
+    console.warn(`[UGC REPORT] Oda="${payload?.room ?? '-'}" Raporlayan="${payload?.reportedBy ?? '-'}" Hedef="${payload?.reportedUser ?? '-'}" Sebep="${payload?.reason ?? '-'}"`);
+    return { success: true };
+  }
+
+  @SubscribeMessage('user_blocked_report')
+  handleUserBlockedReport(@MessageBody() payload: { blockedUser?: string; reportedBy?: string; room?: string }) {
+    console.warn(`[UGC BLOCK] Oda="${payload?.room ?? '-'}" Engelleyen="${payload?.reportedBy ?? '-'}" Engellenen="${payload?.blockedUser ?? '-'}"`);
+    return { success: true };
+  }
+
   private sweepStaleParticipants() {
     const sweptRooms = this.registry.sweepStale();
     for (const { roomName, removedNames } of sweptRooms) {

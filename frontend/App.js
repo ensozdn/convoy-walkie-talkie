@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Text, View, SafeAreaView, StatusBar, Alert, Keyboard, Share, Animated, Image } from 'react-native';
+import { Text, View, SafeAreaView, StatusBar, Alert, Keyboard, Share, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Clipboard from 'expo-clipboard';
@@ -74,7 +74,7 @@ export default function App() {
   });
 
   const {
-    fadeAnim, slideAnim, pulseAnim, logoGlowAnim, logoScaleAnim, tabFadeAnim, tabSlideAnim, animateTabTransition,
+    fadeAnim, slideAnim, pulseAnim, logoGlowAnim, logoScaleAnim, tabFadeAnim, animateTabTransition,
   } = useUIAnimations({ lobbyMode, activeSpeaker });
 
   const ads = useConvoyAds(prefs.triggerToast, prefs.t);
@@ -156,14 +156,14 @@ export default function App() {
   };
 
   const handleLeaveRoom = () => {
-    driveSession.captureSummary();
+    const summaryShown = driveSession.captureSummary();
     leaveRoom();
     setLobbyMode('home');
     setIsInRoom(false);
     setActiveSpeaker(null);
     setIsSpeakingLocally(false);
     setActiveTab('radio');
-    ads.showExitInterstitial();
+    if (!summaryShown) ads.showExitInterstitial();
   };
 
   const confirmLeaveRoom = () => {
@@ -228,15 +228,15 @@ export default function App() {
     isFollowing, setIsFollowing, handleFitAll, handleRecenter,
     leaderName: effectiveLeaderName, username: localDisplayName, waypoint, setConvoyWaypoint, triggerToast: prefs.triggerToast,
     setSelectedUserForAction: prefs.setSelectedUserForAction, setUserActionStep: prefs.setUserActionStep,
-    onOpenAvatarModal: () => prefs.setShowAvatarModal(true), ads, driveSession,
+    onOpenAvatarModal: () => prefs.setShowAvatarModal(true), ads,
   }), [
     t, roomCode, connectionState, isSpeakingLocally, handleTalkStart, handleTalkEnd,
     userLocation, visibleParticipants, activeSpeaker, mapType,
     isFollowing, effectiveLeaderName, localDisplayName, waypoint,
-    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal, ads, driveSession,
+    prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal, ads,
   ]);
 
-  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} driveSession={driveSession} />;
+  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} driveSession={driveSession} onSummaryClosed={ads.showExitInterstitial} />;
 
   if (!isInRoom) {
     return (
@@ -271,7 +271,7 @@ export default function App() {
             {...sharedTabProps} isChannelMuted={isChannelMuted} handleToggleMute={handleToggleMute}
             handleCopyRoomCode={handleCopyRoomCode} confirmLeaveRoom={confirmLeaveRoom}
             pulseAnim={pulseAnim} activePing={activePing} sendQuickPing={sendQuickPing}
-            handleTabPress={handleTabPress}
+            handleTabPress={handleTabPress} driveSession={driveSession}
           />
         </View>
         <View style={[styles.tabScreenContainer, activeTab === 'map' ? styles.tabScreenActive : styles.tabScreenHidden]} pointerEvents={activeTab === 'map' ? 'auto' : 'none'}>

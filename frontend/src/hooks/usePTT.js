@@ -65,14 +65,21 @@ export function usePTT({
     return nextMuted;
   }, [clearIncoming]);
 
-  const emitToRoom = (eventName, extraPayload = {}) => {
+  const emitToRoom = useCallback((eventName, extraPayload = {}) => {
     socketRef.current?.emit(eventName, {
       roomName: roomCodeRef.current,
       ...extraPayload,
     });
-  };
+  }, [roomCodeRef, socketRef]);
 
-  const handleTalkStart = async () => {
+  const abortLocalTalk = useCallback(() => {
+    isHeldRef.current = false;
+    setIsSpeakingLocally(false);
+    setActiveSpeaker(null);
+    emitToRoom('ptt_stop', { participantName: usernameRef.current });
+  }, [emitToRoom, setActiveSpeaker, usernameRef]);
+
+  const handleTalkStart = useCallback(async () => {
     if (activeSpeaker && !activeSpeaker.isLocal) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
@@ -90,13 +97,17 @@ export function usePTT({
 
     try {
       const isRecording = await voiceRecorder.start(() => isHeldRef.current);
-      if (!isRecording) console.warn('[PTT] Kayit baslamadi: mikrofon hazir degil veya tus erken birakildi');
+      if (!isRecording) {
+        console.warn('[PTT] Kayit baslamadi: mikrofon hazir degil veya tus erken birakildi');
+        if (isHeldRef.current) abortLocalTalk();
+      }
     } catch (e) {
       console.error('[PTT] Kayit baslatilamadi:', e.message);
+      if (isHeldRef.current) abortLocalTalk();
     }
-  };
+  }, [abortLocalTalk, activeSpeaker, emitToRoom, playBeepOn, rogerBeepRef, setActiveSpeaker, usernameRef, voiceRecorder]);
 
-  const handleTalkEnd = async () => {
+  const handleTalkEnd = useCallback(async () => {
     if (!isHeldRef.current) return;
     isHeldRef.current = false;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -113,7 +124,7 @@ export function usePTT({
       emitToRoom('ptt_stop', { participantName: usernameRef.current });
     }
     voiceRecorder.rearm();
-  };
+  }, [emitToRoom, playBeepOff, rogerBeepRef, setActiveSpeaker, usernameRef, voiceRecorder]);
 
   return {
     isSpeakingLocally,

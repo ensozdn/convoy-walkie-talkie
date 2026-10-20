@@ -53,6 +53,7 @@ export function useConvoyAds(triggerToast, t) {
   }, [t, triggerToast]);
 
   const resetAdFreeForTest = useCallback(async () => {
+    if (!ADS_CONFIG.IS_TEST_MODE && !__DEV__) return;
     try {
       await AsyncStorage.removeItem(ADS_CONFIG.STORAGE_KEYS.AD_FREE_UNTIL);
       await AsyncStorage.removeItem(ADS_CONFIG.STORAGE_KEYS.LAST_INTERSTITIAL);
@@ -159,7 +160,7 @@ export function useConvoyAds(triggerToast, t) {
     const nativeAds = getNativeAdsModule();
     if (!nativeAds) {
       lastInterstitialTimeRef.current = now;
-      AsyncStorage.setItem(ADS_CONFIG.STORAGE_KEYS.LAST_INTERSTITIAL, String(now)).catch(() => {});
+      AsyncStorage.setItem(ADS_CONFIG.STORAGE_KEYS.LAST_INTERSTITIAL, String(now)).catch((e) => console.warn('[ADS] Kayit hatasi:', e?.message ?? e));
       Alert.alert(
         'AdMob Test Geçiş Reklamı',
         'Odadan ayrılma geçiş reklamı (Interstitial) tetiklendi. 15 dakika boyunca tekrar gösterilmeyecek.'
@@ -171,7 +172,7 @@ export function useConvoyAds(triggerToast, t) {
       try {
         interstitialRef.current.show();
         lastInterstitialTimeRef.current = now;
-        AsyncStorage.setItem(ADS_CONFIG.STORAGE_KEYS.LAST_INTERSTITIAL, String(now)).catch(() => {});
+        AsyncStorage.setItem(ADS_CONFIG.STORAGE_KEYS.LAST_INTERSTITIAL, String(now)).catch((e) => console.warn('[ADS] Kayit hatasi:', e?.message ?? e));
         return true;
       } catch (e) {
         console.warn('[ADS] Interstitial gosterim hatasi:', e?.message ?? e);
@@ -239,13 +240,7 @@ export function useConvoyAds(triggerToast, t) {
   }, [checkAdFreeStatus, loadInterstitial, loadRewarded]);
 
   return {
-    isAdFree,
-    adFreeRemainingHours,
-    isRewardedLoaded,
-    isRewardedLoading,
-    showExitInterstitial,
-    showRewardedAd,
-    resetAdFreeForTest,
-    checkAdFreeStatus,
+    isAdFree, adFreeRemainingHours, isRewardedLoaded, isRewardedLoading,
+    showExitInterstitial, showRewardedAd, resetAdFreeForTest, checkAdFreeStatus,
   };
 }

@@ -237,7 +237,7 @@ export const SettingsTab = React.memo(function SettingsTab({
               </View>
             </View>
             {ads?.isAdFree ? (
-              <View style={styles.adFreePillBadge}><Text style={styles.adFreePillText}>24H AKTİF</Text></View>
+              <View style={styles.adFreePillBadge}><Text style={styles.adFreePillText}>{t('adFreePillActive')}</Text></View>
             ) : ads?.isRewardedLoading ? (
               <ActivityIndicator size="small" color={COLORS.accentCyan} />
             ) : (

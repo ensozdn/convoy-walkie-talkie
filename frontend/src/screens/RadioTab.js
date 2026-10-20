@@ -128,7 +128,7 @@ export const RadioTab = React.memo(function RadioTab({
         <View style={styles.cockpitSpeedometer}>
           <Text style={styles.cockpitSpeedValue}>{driveSession?.currentSpeedKmh ?? userLocation?.speedKmh ?? 0}</Text>
           <View style={styles.cockpitSpeedUnitCol}>
-            <Text style={styles.cockpitSpeedUnit}>KM/S</Text>
+            <Text style={styles.cockpitSpeedUnit}>{t('speedUnitUpper')}</Text>
             <Text style={styles.cockpitSpeedLabel}>{t('gpsSpeed')}</Text>
           </View>
         </View>
@@ -145,7 +145,7 @@ export const RadioTab = React.memo(function RadioTab({
           <Ionicons name="timer-outline" size={13} color={COLORS.rxAmberBright} />
           <View>
             <Text style={styles.cockpitStatLabel}>{t('tripDuration')}</Text>
-            <Text style={styles.cockpitStatValue}>{driveSession?.sessionDurationMinutes ?? 1} dk</Text>
+            <Text style={styles.cockpitStatValue}>{driveSession?.sessionDurationMinutes ?? 1} {t('durationUnitShort')}</Text>
           </View>
         </View>
       </View>

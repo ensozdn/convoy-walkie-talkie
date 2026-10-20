@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculateDistanceMeters } from '../utils/geo';
 
@@ -6,7 +6,7 @@ const STORAGE_KEY_DRIVE_SUMMARY = '@convoy_drive_summary_enabled';
 
 export function useDriveSession({ isInRoom, userLocation, roomCode }) {
   const [sessionDistanceMeters, setSessionDistanceMeters] = useState(0);
-  const [sessionDurationSeconds, setSessionDurationSeconds] = useState(0);
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState(1);
   const [maxSpeedKmh, setMaxSpeedKmh] = useState(0);
   const [summaryData, setSummaryData] = useState(null);
   const [isSummaryEnabled, setIsSummaryEnabled] = useState(true);
@@ -51,7 +51,7 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
     if (!isInRoom) {
       lastCoordsRef.current = null;
       setSessionDistanceMeters(0);
-      setSessionDurationSeconds(0);
+      setSessionDurationMinutes(1);
       setMaxSpeedKmh(0);
       maxSpeedRef.current = 0;
       distanceRef.current = 0;
@@ -61,7 +61,8 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
 
     const timer = setInterval(() => {
       durationRef.current += 1;
-      setSessionDurationSeconds((prev) => prev + 1);
+      const nextMinutes = Math.max(1, Math.floor(durationRef.current / 60));
+      setSessionDurationMinutes((prev) => (prev === nextMinutes ? prev : nextMinutes));
     }, 1000);
 
     return () => {
@@ -94,8 +95,8 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
   }, [isInRoom, userLocation]);
 
   const captureSummary = useCallback(() => {
-    if (!isSummaryEnabledRef.current) return;
-    if (distanceRef.current < 150 && durationRef.current < 60) return;
+    if (!isSummaryEnabledRef.current) return false;
+    if (distanceRef.current < 150 && durationRef.current < 60) return false;
 
     const distKm = (distanceRef.current / 1000).toFixed(1);
     const durMin = Math.max(1, Math.round(durationRef.current / 60));
@@ -105,6 +106,7 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
       durationMinutes: durMin,
       maxSpeedKmh: maxSpeedRef.current,
     });
+    return true;
   }, [roomCode]);
 
   const closeSummary = useCallback(() => {
@@ -113,12 +115,11 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
 
   const currentSpeed = userLocation?.speedKmh || 0;
   const distanceKmText = (sessionDistanceMeters / 1000).toFixed(1);
-  const durationMinutes = Math.max(1, Math.floor(sessionDurationSeconds / 60));
 
-  return {
+  return useMemo(() => ({
     currentSpeedKmh: currentSpeed,
     sessionDistanceKm: distanceKmText,
-    sessionDurationMinutes: durationMinutes,
+    sessionDurationMinutes,
     maxSpeedKmh,
     summaryData,
     isSummaryEnabled,
@@ -126,5 +127,9 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
     toggleSummaryEnabled,
     captureSummary,
     closeSummary,
-  };
+  }), [
+    captureSummary, closeSummary, currentSpeed, distanceKmText,
+    isSummaryEnabled, maxSpeedKmh, sessionDurationMinutes,
+    setSummaryEnabled, summaryData, toggleSummaryEnabled,
+  ]);
 }

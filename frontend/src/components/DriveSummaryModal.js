@@ -46,13 +46,13 @@ export function DriveSummaryModal({ summaryData, onClose, onDisable, t }) {
 
             <View style={styles.driveSummaryStatItem}>
               <Ionicons name="timer-outline" size={16} color={COLORS.rxAmberBright} />
-              <Text style={styles.driveSummaryStatValue}>{summaryData.durationMinutes} dk</Text>
+              <Text style={styles.driveSummaryStatValue}>{summaryData.durationMinutes} {t('durationUnitShort')}</Text>
               <Text style={styles.driveSummaryStatLabel}>{t('totalDuration')}</Text>
             </View>
 
             <View style={styles.driveSummaryStatItem}>
               <Ionicons name="flash-outline" size={16} color={COLORS.txGreenBright} />
-              <Text style={styles.driveSummaryStatValue}>{summaryData.maxSpeedKmh} km/s</Text>
+              <Text style={styles.driveSummaryStatValue}>{summaryData.maxSpeedKmh} {t('speedUnitLower')}</Text>
               <Text style={styles.driveSummaryStatLabel}>{t('maxSpeed')}</Text>
             </View>
           </View>

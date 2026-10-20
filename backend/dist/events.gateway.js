@@ -46,25 +46,34 @@ let EventsGateway = class EventsGateway {
         }
     }
     handleJoinRoom(client, payload) {
-        const { roomName, participantName, coords } = payload;
+        const { roomName, participantName, coords, avatarColor, vehicleType } = payload;
         if (!roomName || !participantName)
             return { success: false };
         client.join(roomName);
         client.data = { roomName, participantName };
-        this.registry.join(roomName, participantName, client.id, coords);
+        this.registry.join(roomName, participantName, client.id, coords, avatarColor, vehicleType);
         console.log(`[WS JOIN] ${participantName} "${roomName}" odasina katildi.`);
         this.broadcastRoomState(roomName);
         return { success: true };
     }
     handleHeartbeat(client, payload) {
-        const { roomName, participantName, coords } = payload;
+        const { roomName, participantName, coords, avatarColor, vehicleType } = payload;
         if (!roomName || !participantName)
             return { success: false };
         client.data = { roomName, participantName };
-        const touched = this.registry.touch(roomName, participantName, client.id, coords);
+        const touched = this.registry.touch(roomName, participantName, client.id, coords, avatarColor, vehicleType);
         if (!touched) {
             return this.handleJoinRoom(client, payload);
         }
+        return { success: true };
+    }
+    handleUpdateProfile(client, payload) {
+        const { roomName, participantName, avatarColor, vehicleType } = payload;
+        if (!roomName || !participantName)
+            return { success: false };
+        this.registry.touch(roomName, participantName, client.id, undefined, avatarColor, vehicleType);
+        console.log(`[WS PROFILE] ${participantName} profilini guncelledi: ${vehicleType} / ${avatarColor}`);
+        this.broadcastRoomState(roomName);
         return { success: true };
     }
     handleLeaveRoom(client, payload) {
@@ -161,6 +170,14 @@ let EventsGateway = class EventsGateway {
         this.broadcastRoomState(roomName);
         return { success: true, waypoint };
     }
+    handleUserReported(payload) {
+        console.warn(`[UGC REPORT] Oda="${payload?.room ?? '-'}" Raporlayan="${payload?.reportedBy ?? '-'}" Hedef="${payload?.reportedUser ?? '-'}" Sebep="${payload?.reason ?? '-'}"`);
+        return { success: true };
+    }
+    handleUserBlockedReport(payload) {
+        console.warn(`[UGC BLOCK] Oda="${payload?.room ?? '-'}" Engelleyen="${payload?.reportedBy ?? '-'}" Engellenen="${payload?.blockedUser ?? '-'}"`);
+        return { success: true };
+    }
     sweepStaleParticipants() {
         const sweptRooms = this.registry.sweepStale();
         for (const { roomName, removedNames } of sweptRooms) {
@@ -198,6 +215,14 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], EventsGateway.prototype, "handleHeartbeat", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('update_profile'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handleUpdateProfile", null);
 __decorate([
     (0, websockets_1.SubscribeMessage)('leave_room'),
     __param(0, (0, websockets_1.ConnectedSocket)()),
@@ -254,6 +279,20 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], EventsGateway.prototype, "handleSetWaypoint", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('user_reported'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handleUserReported", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('user_blocked_report'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], EventsGateway.prototype, "handleUserBlockedReport", null);
 exports.EventsGateway = EventsGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {

@@ -7,7 +7,12 @@ import { Toast } from './Toast';
 
 const LOGO_BADGE = require('../../assets/logo-badge.png');
 
-export function AppModals({ prefs, t, username, driveSession }) {
+export function AppModals({ prefs, t, username, driveSession, onSummaryClosed }) {
+  const handleCloseSummary = () => {
+    driveSession?.closeSummary?.();
+    onSummaryClosed?.();
+  };
+
   return (
     <>
       <Image source={LOGO_BADGE} style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }} fadeDuration={0} />
@@ -26,7 +31,7 @@ export function AppModals({ prefs, t, username, driveSession }) {
       />
       <DriveSummaryModal
         summaryData={driveSession?.summaryData}
-        onClose={driveSession?.closeSummary}
+        onClose={handleCloseSummary}
         onDisable={driveSession?.setSummaryEnabled}
         t={t}
       />

@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Location from 'expo-location';
 import { DEFAULT_REGION } from '../constants/config';
 
+const SOCKET_BROADCAST_MIN_MS = 3500;
+const STATIONARY_SPEED_DECAY_MS = 5500;
+
 function toSpeedKmh(rawSpeedMetersPerSec) {
   if (typeof rawSpeedMetersPerSec !== 'number' || rawSpeedMetersPerSec < 0.6) {
     return 0;
@@ -12,9 +15,19 @@ function toSpeedKmh(rawSpeedMetersPerSec) {
 export function useLocation({ isInRoom, socketRef, roomCodeRef, usernameRef }) {
   const [userLocation, setUserLocation] = useState(DEFAULT_REGION);
   const locationSubRef = useRef(null);
+  const speedDecayTimerRef = useRef(null);
+  const lastBroadcastTimeRef = useRef(0);
+
+  const clearSpeedDecayTimer = useCallback(() => {
+    if (speedDecayTimerRef.current) {
+      clearTimeout(speedDecayTimerRef.current);
+      speedDecayTimerRef.current = null;
+    }
+  }, []);
 
   const sendLocationUpdate = useCallback((coords) => {
     if (socketRef.current && socketRef.current.connected) {
+      lastBroadcastTimeRef.current = Date.now();
       socketRef.current.emit('location_update', {
         roomName: roomCodeRef.current,
         participantName: usernameRef.current,
@@ -65,7 +78,10 @@ export function useLocation({ isInRoom, socketRef, roomCodeRef, usernameRef }) {
   }, []);
 
   useEffect(() => {
-    if (!isInRoom) return undefined;
+    if (!isInRoom) {
+      clearSpeedDecayTimer();
+      return undefined;
+    }
 
     let cancelled = false;
     (async () => {
@@ -74,20 +90,33 @@ export function useLocation({ isInRoom, socketRef, roomCodeRef, usernameRef }) {
         if (status === 'granted' && !cancelled) {
           const sub = await Location.watchPositionAsync(
             {
-              accuracy: Location.Accuracy.Balanced,
-              timeInterval: 4000,
-              distanceInterval: 6,
+              accuracy: Location.Accuracy.BestForNavigation ?? Location.Accuracy.High,
+              timeInterval: 2000,
+              distanceInterval: 2,
             },
             (loc) => {
+              const speedKmh = toSpeedKmh(loc.coords.speed);
               const newCoords = {
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude,
                 latitudeDelta: 0.015,
                 longitudeDelta: 0.015,
-                speedKmh: toSpeedKmh(loc.coords.speed),
+                speedKmh,
               };
               setUserLocation(newCoords);
-              sendLocationUpdate(newCoords);
+
+              if (Date.now() - lastBroadcastTimeRef.current >= SOCKET_BROADCAST_MIN_MS || speedKmh === 0) {
+                sendLocationUpdate(newCoords);
+              }
+
+              clearSpeedDecayTimer();
+              if (speedKmh > 0) {
+                speedDecayTimerRef.current = setTimeout(() => {
+                  const stationaryCoords = { ...newCoords, speedKmh: 0 };
+                  setUserLocation(stationaryCoords);
+                  sendLocationUpdate(stationaryCoords);
+                }, STATIONARY_SPEED_DECAY_MS);
+              }
             }
           );
           if (cancelled) {
@@ -103,12 +132,13 @@ export function useLocation({ isInRoom, socketRef, roomCodeRef, usernameRef }) {
 
     return () => {
       cancelled = true;
+      clearSpeedDecayTimer();
       if (locationSubRef.current) {
         locationSubRef.current.remove();
         locationSubRef.current = null;
       }
     };
-  }, [isInRoom, sendLocationUpdate]);
+  }, [clearSpeedDecayTimer, isInRoom, sendLocationUpdate]);
 
   return { userLocation, sendLocationUpdate };
 }
