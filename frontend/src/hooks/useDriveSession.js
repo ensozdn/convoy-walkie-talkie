@@ -1,51 +1,15 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { calculateDistanceMeters } from '../utils/geo';
 
-const STORAGE_KEY_DRIVE_SUMMARY = '@convoy_drive_summary_enabled';
-
-export function useDriveSession({ isInRoom, userLocation, roomCode }) {
+export function useDriveSession({ isInRoom, userLocation }) {
   const [sessionDistanceMeters, setSessionDistanceMeters] = useState(0);
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(1);
   const [maxSpeedKmh, setMaxSpeedKmh] = useState(0);
-  const [summaryData, setSummaryData] = useState(null);
-  const [isSummaryEnabled, setIsSummaryEnabled] = useState(true);
 
   const lastCoordsRef = useRef(null);
   const maxSpeedRef = useRef(0);
   const distanceRef = useRef(0);
   const durationRef = useRef(0);
-  const isSummaryEnabledRef = useRef(true);
-
-  useEffect(() => {
-    let mounted = true;
-    AsyncStorage.getItem(STORAGE_KEY_DRIVE_SUMMARY)
-      .then((val) => {
-        if (!mounted || val === null) return;
-        const enabled = val === 'true';
-        setIsSummaryEnabled(enabled);
-        isSummaryEnabledRef.current = enabled;
-      })
-      .catch((e) => console.warn('[DRIVE_SESSION] Tercih yukleme hatasi:', e.message));
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const setSummaryEnabled = useCallback(async (enabled) => {
-    setIsSummaryEnabled(enabled);
-    isSummaryEnabledRef.current = enabled;
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY_DRIVE_SUMMARY, String(enabled));
-    } catch (e) {
-      console.warn('[DRIVE_SESSION] Tercih kaydetme hatasi:', e.message);
-    }
-  }, []);
-
-  const toggleSummaryEnabled = useCallback(() => {
-    setSummaryEnabled(!isSummaryEnabledRef.current);
-  }, [setSummaryEnabled]);
 
   useEffect(() => {
     if (!isInRoom) {
@@ -94,25 +58,6 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
     }
   }, [isInRoom, userLocation]);
 
-  const captureSummary = useCallback(() => {
-    if (!isSummaryEnabledRef.current) return false;
-    if (distanceRef.current < 150 && durationRef.current < 60) return false;
-
-    const distKm = (distanceRef.current / 1000).toFixed(1);
-    const durMin = Math.max(1, Math.round(durationRef.current / 60));
-    setSummaryData({
-      roomCode: roomCode || '',
-      distanceKm: distKm,
-      durationMinutes: durMin,
-      maxSpeedKmh: maxSpeedRef.current,
-    });
-    return true;
-  }, [roomCode]);
-
-  const closeSummary = useCallback(() => {
-    setSummaryData(null);
-  }, []);
-
   const currentSpeed = userLocation?.speedKmh || 0;
   const distanceKmText = (sessionDistanceMeters / 1000).toFixed(1);
 
@@ -121,15 +66,5 @@ export function useDriveSession({ isInRoom, userLocation, roomCode }) {
     sessionDistanceKm: distanceKmText,
     sessionDurationMinutes,
     maxSpeedKmh,
-    summaryData,
-    isSummaryEnabled,
-    setSummaryEnabled,
-    toggleSummaryEnabled,
-    captureSummary,
-    closeSummary,
-  }), [
-    captureSummary, closeSummary, currentSpeed, distanceKmText,
-    isSummaryEnabled, maxSpeedKmh, sessionDurationMinutes,
-    setSummaryEnabled, summaryData, toggleSummaryEnabled,
-  ]);
+  }), [currentSpeed, distanceKmText, maxSpeedKmh, sessionDurationMinutes]);
 }

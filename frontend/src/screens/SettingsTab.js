@@ -16,7 +16,7 @@ export const SettingsTab = React.memo(function SettingsTab({
   editingName, handleSaveName, rogerBeep, setRogerBeep, rogerBeepRef, playBeepOff,
   t, setIsEulaFromSettings, setShowEulaModal, triggerToast, setShowBlockedUsersModal,
   blockedUsers, setShowGuide, avatarColor, vehicleType, setShowAvatarModal,
-  ads, driveSession,
+  ads,
 }) {
   const handleToggleRogerBeep = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -34,13 +34,6 @@ export const SettingsTab = React.memo(function SettingsTab({
   const handleCopySupportMail = async () => {
     await Clipboard.setStringAsync('support@tripnoute.com');
     triggerToast(t('toastSupportCopied'));
-  };
-
-  const handleToggleDriveSummary = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (typeof driveSession?.toggleSummaryEnabled === 'function') {
-      driveSession.toggleSummaryEnabled();
-    }
   };
 
   const openEulaModal = () => {
@@ -154,24 +147,6 @@ export const SettingsTab = React.memo(function SettingsTab({
               activeOpacity={0.85}
             >
               <View style={[styles.toggleThumb, rogerBeep && styles.toggleThumbOn]} />
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.settingsRow, styles.settingsRowDivider]}>
-            <View style={styles.settingsRowLeft}>
-              <View style={styles.settingsIconBox}>
-                <Ionicons name="speedometer" size={18} color={COLORS.accentCyan} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.settingsRowTitle}>{t('driveSummarySettingTitle')}</Text>
-                <Text style={styles.settingsRowSub}>{t('driveSummarySettingSub')}</Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[styles.toggleTrack, driveSession?.isSummaryEnabled && styles.toggleTrackOn]}
-              onPress={handleToggleDriveSummary}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.toggleThumb, driveSession?.isSummaryEnabled && styles.toggleThumbOn]} />
             </TouchableOpacity>
           </View>
         </View>

@@ -46,7 +46,7 @@ export default function App() {
   }, []);
 
   const { userLocation, sendLocationUpdate } = useLocation({ isInRoom, socketRef, roomCodeRef, usernameRef });
-  const driveSession = useDriveSession({ isInRoom, userLocation, roomCode });
+  const driveSession = useDriveSession({ isInRoom, userLocation });
 
   const {
     isSpeakingLocally, setIsSpeakingLocally, isChannelMuted, toggleChannelMute,
@@ -156,14 +156,13 @@ export default function App() {
   };
 
   const handleLeaveRoom = () => {
-    const summaryShown = driveSession.captureSummary();
     leaveRoom();
     setLobbyMode('home');
     setIsInRoom(false);
     setActiveSpeaker(null);
     setIsSpeakingLocally(false);
     setActiveTab('radio');
-    if (!summaryShown) ads.showExitInterstitial();
+    ads.showExitInterstitial();
   };
 
   const confirmLeaveRoom = () => {
@@ -236,7 +235,7 @@ export default function App() {
     prefs.triggerToast, prefs.setSelectedUserForAction, prefs.setUserActionStep, prefs.setShowAvatarModal, ads,
   ]);
 
-  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} driveSession={driveSession} onSummaryClosed={ads.showExitInterstitial} />;
+  const modalOverlays = <AppModals prefs={prefs} t={t} username={localDisplayName} />;
 
   if (!isInRoom) {
     return (
@@ -285,7 +284,6 @@ export default function App() {
             {...prefs} isEditingName={isEditingName} setEditingName={setEditingName}
             setIsEditingName={setIsEditingName} editingName={editingName}
             handleSaveName={handleSaveName} playBeepOff={playBeepOff} ads={ads}
-            driveSession={driveSession}
           />
         </View>
       </Animated.View>
