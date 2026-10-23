@@ -1,7 +1,7 @@
 import { TurboModuleRegistry } from 'react-native';
 
 export const ADS_CONFIG = {
-  IS_TEST_MODE: true,
+  IS_TEST_MODE: false,
 
   TEST_UNITS: {
     BANNER: 'ca-app-pub-3940256099942544/2934735716',
@@ -10,9 +10,9 @@ export const ADS_CONFIG = {
   },
 
   PROD_UNITS_IOS: {
-    BANNER: 'ca-app-pub-3940256099942544/2934735716',
-    INTERSTITIAL: 'ca-app-pub-3940256099942544/4411468910',
-    REWARDED: 'ca-app-pub-3940256099942544/1712485313',
+    BANNER: 'ca-app-pub-5278132699093155/2720504352',
+    INTERSTITIAL: 'ca-app-pub-5278132699093155/1024279309',
+    REWARDED: 'ca-app-pub-5278132699093155/9613301482',
   },
 
   AD_FREE_DURATION_MS: 24 * 60 * 60 * 1000,
