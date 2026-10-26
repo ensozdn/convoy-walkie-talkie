@@ -5,7 +5,7 @@ import { getAdUnitId, getNativeAdsModule, ADS_CONFIG } from '../constants/ads';
 import { styles } from '../styles/styles';
 import { COLORS } from '../styles/theme';
 
-export function ConvoyBanner({ isAdFree, style }) {
+export function ConvoyBanner({ isAdFree, isTrackingGranted, style }) {
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -42,7 +42,7 @@ export function ConvoyBanner({ isAdFree, style }) {
       <BannerAd
         unitId={getAdUnitId('BANNER')}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-        requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+        requestOptions={{ requestNonPersonalizedAdsOnly: !isTrackingGranted }}
         onAdLoaded={() => setIsLoaded(true)}
         onAdFailedToLoad={(err) => {
           console.warn('[ADS] Banner yuklenemedi:', err?.message ?? err);

@@ -143,7 +143,7 @@ export const DriversTab = React.memo(function DriversTab({
               );
             })
           )}
-          <ConvoyBanner isAdFree={ads?.isAdFree} style={{ marginTop: 8, marginBottom: 8 }} />
+          <ConvoyBanner isAdFree={ads?.isAdFree} isTrackingGranted={ads?.isTrackingGranted} style={{ marginTop: 8, marginBottom: 8 }} />
         </ScrollView>
       </View>
 

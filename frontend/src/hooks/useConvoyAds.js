@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { ADS_CONFIG, getAdUnitId, getNativeAdsModule } from '../constants/ads';
 
 export function useConvoyAds(triggerToast, t) {
@@ -8,11 +9,13 @@ export function useConvoyAds(triggerToast, t) {
   const [adFreeRemainingHours, setAdFreeRemainingHours] = useState(0);
   const [isRewardedLoaded, setIsRewardedLoaded] = useState(false);
   const [isRewardedLoading, setIsRewardedLoading] = useState(false);
+  const [isTrackingGranted, setIsTrackingGranted] = useState(false);
 
   const interstitialRef = useRef(null);
   const rewardedRef = useRef(null);
   const isInterstitialLoadedRef = useRef(false);
   const lastInterstitialTimeRef = useRef(0);
+  const isTrackingGrantedRef = useRef(false);
 
   const checkAdFreeStatus = useCallback(async () => {
     try {
@@ -73,7 +76,7 @@ export function useConvoyAds(triggerToast, t) {
     try {
       const { InterstitialAd, AdEventType } = nativeAds;
       const ad = InterstitialAd.createForAdRequest(getAdUnitId('INTERSTITIAL'), {
-        requestNonPersonalizedAdsOnly: true,
+        requestNonPersonalizedAdsOnly: !isTrackingGrantedRef.current,
       });
 
       const unsubLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
@@ -114,7 +117,7 @@ export function useConvoyAds(triggerToast, t) {
       setIsRewardedLoading(true);
       const { RewardedAd, RewardedAdEventType, AdEventType } = nativeAds;
       const ad = RewardedAd.createForAdRequest(getAdUnitId('REWARDED'), {
-        requestNonPersonalizedAdsOnly: true,
+        requestNonPersonalizedAdsOnly: !isTrackingGrantedRef.current,
       });
 
       const unsubLoaded = ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
@@ -217,6 +220,24 @@ export function useConvoyAds(triggerToast, t) {
         const activeAdFree = await checkAdFreeStatus();
         if (unmounted) return;
 
+        if (Platform.OS === 'ios') {
+          try {
+            const current = await getTrackingPermissionsAsync();
+            let finalStatus = current.status;
+            if (finalStatus === 'undetermined') {
+              await new Promise((res) => setTimeout(res, 800));
+              const requested = await requestTrackingPermissionsAsync();
+              finalStatus = requested.status;
+            }
+            const granted = finalStatus === 'granted';
+            isTrackingGrantedRef.current = granted;
+            if (!unmounted) setIsTrackingGranted(granted);
+          } catch (attErr) {
+            console.warn('[ATT] Izin alma hatasi:', attErr?.message ?? attErr);
+          }
+        }
+        if (unmounted) return;
+
         const nativeAds = getNativeAdsModule();
         if (nativeAds?.default) {
           await nativeAds.default().initialize();
@@ -241,6 +262,7 @@ export function useConvoyAds(triggerToast, t) {
 
   return {
     isAdFree, adFreeRemainingHours, isRewardedLoaded, isRewardedLoading,
-    showExitInterstitial, showRewardedAd, resetAdFreeForTest, checkAdFreeStatus,
+    isTrackingGranted, showExitInterstitial, showRewardedAd,
+    resetAdFreeForTest, checkAdFreeStatus,
   };
 }

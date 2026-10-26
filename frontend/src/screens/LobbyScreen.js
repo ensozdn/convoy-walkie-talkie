@@ -215,7 +215,7 @@ export function LobbyScreen({
             </KeyboardAvoidingView>
           )}
 
-          <ConvoyBanner isAdFree={ads?.isAdFree} />
+          <ConvoyBanner isAdFree={ads?.isAdFree} isTrackingGranted={ads?.isTrackingGranted} />
         </View>
         {overlays}
       </SafeAreaView>

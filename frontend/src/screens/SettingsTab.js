@@ -225,7 +225,7 @@ export const SettingsTab = React.memo(function SettingsTab({
         </View>
       </View>
 
-      <ConvoyBanner isAdFree={ads?.isAdFree} style={{ marginTop: 4, marginBottom: 24, paddingHorizontal: 16 }} />
+      <ConvoyBanner isAdFree={ads?.isAdFree} isTrackingGranted={ads?.isTrackingGranted} style={{ marginTop: 4, marginBottom: 24, paddingHorizontal: 16 }} />
     </ScrollView>
   );
 });

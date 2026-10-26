@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.convoy.walkietalkie",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Microphone access is required for real-time Push-to-Talk voice communication with convoy members.",
         "NSLocationWhenInUseUsageDescription": "Location access is required to display your position and distance to other drivers on the convoy map.",
@@ -28,7 +28,7 @@
           "location"
         ],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserTrackingUsageDescription": "Bu izin, sizlere ilgi alanlarınıza uygun kişiselleştirilmiş reklamlar sunabilmek için kullanılır."
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
       }
     },
     "android": {
@@ -63,11 +63,17 @@
       ],
       "expo-audio",
       [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
+        }
+      ],
+      [
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-3940256099942544~3347511713",
           "iosAppId": "ca-app-pub-5278132699093155~9855055627",
-          "userTrackingUsageDescription": "Bu izin, sizlere ilgi alanlarınıza uygun kişiselleştirilmiş reklamlar sunabilmek için kullanılır."
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
         }
       ]
     ],
