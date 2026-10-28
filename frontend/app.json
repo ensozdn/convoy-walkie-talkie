@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Konvoy Telsiz",
+    "name": "Convoy Radio",
     "slug": "convoy-walkie-talkie",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -19,6 +19,7 @@
       "bundleIdentifier": "com.convoy.walkietalkie",
       "buildNumber": "11",
       "infoPlist": {
+        "CFBundleDisplayName": "Convoy Radio",
         "NSMicrophoneUsageDescription": "Microphone access is required for real-time Push-to-Talk voice communication with convoy members.",
         "NSLocationWhenInUseUsageDescription": "Location access is required to display your position and distance to other drivers on the convoy map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Background location access is required to transmit your position to convoy members while the app is in background.",
