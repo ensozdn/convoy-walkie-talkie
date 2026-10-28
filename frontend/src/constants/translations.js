@@ -20,7 +20,7 @@ export const getDeviceLanguage = () => {
 export const TRANSLATIONS = {
   tr: {
     radio: 'TELSİZ',
-    title: 'Konvoy Telsiz',
+    title: 'Convoy Radio',
     subtitle: 'Konvoy Sürüşlerinde Anlık Telsiz ve Takip',
     yourName: 'SÜRÜCÜ ADI',
     enterName: 'Örn: Lider-01 veya Ahmet',
