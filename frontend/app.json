@@ -2,7 +2,7 @@
   "expo": {
     "name": "Convoy Radio",
     "slug": "convoy-walkie-talkie",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.convoy.walkietalkie",
-      "buildNumber": "11",
+      "buildNumber": "12",
       "infoPlist": {
         "CFBundleDisplayName": "Convoy Radio",
         "NSMicrophoneUsageDescription": "Microphone access is required for real-time Push-to-Talk voice communication with convoy members.",

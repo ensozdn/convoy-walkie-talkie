@@ -12,6 +12,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../styles/styles';
@@ -66,157 +67,162 @@ export function LobbyScreen({
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor={COLORS.bgPrimary} />
-        <View style={styles.lobbyOuter}>
-          {topBar}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.lobbyScrollContent}
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.lobbyContentWrapper}>
+              {topBar}
 
-          {lobbyMode === 'create' ? (
-            <View style={styles.lobbySubCardCenter}>
-              <LobbyCreateCard
-                fadeAnim={fadeAnim}
-                slideAnim={slideAnim}
-                setLobbyMode={setLobbyMode}
-                t={t}
-                handleCopyCode={handleCopyCode}
-                copied={copied}
-                generatedCode={generatedCode}
-                handleEnterCreatedRoom={handleEnterCreatedRoom}
-                handleShareCode={handleShareCode}
-              />
-            </View>
-          ) : lobbyMode === 'join' ? (
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.lobbySubCardCenter}
-            >
-              <LobbyJoinCard
-                fadeAnim={fadeAnim}
-                slideAnim={slideAnim}
-                setLobbyMode={setLobbyMode}
-                t={t}
-                isInputFocused={isInputFocused}
-                setIsInputFocused={setIsInputFocused}
-                joinCode={joinCode}
-                setJoinCode={setJoinCode}
-                handleJoinRoom={handleJoinRoom}
-                recentCodes={recentCodes}
-              />
-            </KeyboardAvoidingView>
-          ) : (
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.lobbySubCardCenter}
-            >
-              <Animated.View style={[{ width: '100%', opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                <View style={styles.lobbyHeroSection}>
-                  <View style={styles.lobbyLogoWrapper}>
-                    <Animated.View
-                      style={[
-                        styles.lobbyNeonBorder,
-                        {
-                          opacity: logoGlowAnim,
-                          transform: [{ scale: logoScaleAnim || 1 }],
-                        },
-                      ]}
-                    />
-                    <Image source={APP_LOGO} style={styles.lobbyLogoImage} resizeMode="cover" fadeDuration={0} />
-                  </View>
-                  <Text style={styles.title}>{t('title')}</Text>
-                  <Text style={styles.subtitle}>{t('subtitle')}</Text>
-                </View>
-
-                <View style={styles.card}>
-                  <View style={styles.inputContainer}>
-                    <View style={styles.inputLabelRow}>
-                      <Ionicons name="person-outline" size={13} color={COLORS.accentCyan} />
-                      <Text style={styles.inputLabel}>{t('yourName')}</Text>
-                    </View>
-                    <View style={[styles.inputWrapper, isInputFocused && styles.inputWrapperFocused]}>
-                      <TextInput
-                        style={styles.input}
-                        onFocus={() => setIsInputFocused(true)}
-                        onBlur={() => setIsInputFocused(false)}
-                        placeholder={t('enterName')}
-                        placeholderTextColor={COLORS.textDim}
-                        value={username}
-                        onChangeText={setUsername}
-                        autoCapitalize="words"
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
-                      />
-                    </View>
-                  </View>
-
-                  {recentCodes && recentCodes.length > 0 && (
-                    <TouchableOpacity
-                      style={styles.quickJoinCard}
-                      onPress={() => handleQuickJoinRoom?.(recentCodes[0])}
-                      activeOpacity={0.85}
-                    >
-                      <View style={styles.quickJoinLeft}>
-                        <View style={styles.quickJoinIconCircle}>
-                          <Ionicons name="flash" size={16} color={COLORS.accentCyan} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.quickJoinSub}>{t('lastConvoyLabel')}</Text>
-                          <Text style={styles.quickJoinCode}>{recentCodes[0]}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.quickJoinPill}>
-                        <Text style={styles.quickJoinPillText}>{t('quickConnect')}</Text>
-                        <Ionicons name="arrow-forward" size={13} color={COLORS.bgPrimary} />
-                      </View>
-                    </TouchableOpacity>
-                  )}
-
-                  <View style={styles.lobbyActionsStack}>
-                    <TouchableOpacity style={styles.actionCardPrimary} onPress={handleCreateRoom} activeOpacity={0.85}>
-                      <View style={styles.actionCardLeft}>
-                        <View style={styles.actionIconCirclePrimary}>
-                          <Ionicons name="add-circle" size={24} color={COLORS.bgPrimary} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.actionTitlePrimary}>{t('createConvoy')}</Text>
-                          <Text style={styles.actionSubPrimary}>{t('createSub')}</Text>
-                        </View>
-                      </View>
-                      <Ionicons name="chevron-forward" size={20} color={COLORS.bgPrimary} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.actionCardSecondary}
-                      onPress={() => setLobbyMode('join')}
-                      activeOpacity={0.85}
-                    >
-                      <View style={styles.actionCardLeft}>
-                        <View style={styles.actionIconCircleSecondary}>
-                          <Ionicons name="key-outline" size={22} color={COLORS.accentCyan} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.actionTitleSecondary}>{t('joinConvoy')}</Text>
-                          <Text style={styles.actionSubSecondary}>{t('joinSub')}</Text>
-                        </View>
-                      </View>
-                      <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-
-                  <RewardedAdButton
-                    isAdFree={ads?.isAdFree}
-                    remainingHours={ads?.adFreeRemainingHours}
-                    onPress={ads?.showRewardedAd}
-                    onResetTest={ads?.resetAdFreeForTest}
-                    isLoading={ads?.isRewardedLoading}
+              {lobbyMode === 'create' ? (
+                <View style={styles.lobbySubCardCenter}>
+                  <LobbyCreateCard
+                    fadeAnim={fadeAnim}
+                    slideAnim={slideAnim}
+                    setLobbyMode={setLobbyMode}
                     t={t}
-                    style={{ marginTop: 10 }}
-                    hideWhenActive={true}
+                    handleCopyCode={handleCopyCode}
+                    copied={copied}
+                    generatedCode={generatedCode}
+                    handleEnterCreatedRoom={handleEnterCreatedRoom}
+                    handleShareCode={handleShareCode}
                   />
                 </View>
-              </Animated.View>
-            </KeyboardAvoidingView>
-          )}
+              ) : lobbyMode === 'join' ? (
+                <View style={styles.lobbySubCardCenter}>
+                  <LobbyJoinCard
+                    fadeAnim={fadeAnim}
+                    slideAnim={slideAnim}
+                    setLobbyMode={setLobbyMode}
+                    t={t}
+                    isInputFocused={isInputFocused}
+                    setIsInputFocused={setIsInputFocused}
+                    joinCode={joinCode}
+                    setJoinCode={setJoinCode}
+                    handleJoinRoom={handleJoinRoom}
+                    recentCodes={recentCodes}
+                  />
+                </View>
+              ) : (
+                <Animated.View style={[{ width: '100%', opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                  <View style={styles.lobbyHeroSection}>
+                    <View style={styles.lobbyLogoWrapper}>
+                      <Animated.View
+                        style={[
+                          styles.lobbyNeonBorder,
+                          {
+                            opacity: logoGlowAnim,
+                            transform: [{ scale: logoScaleAnim || 1 }],
+                          },
+                        ]}
+                      />
+                      <Image source={APP_LOGO} style={styles.lobbyLogoImage} resizeMode="cover" fadeDuration={0} />
+                    </View>
+                    <Text style={styles.title}>{t('title')}</Text>
+                    <Text style={styles.subtitle}>{t('subtitle')}</Text>
+                  </View>
 
-          <ConvoyBanner isAdFree={ads?.isAdFree} isTrackingGranted={ads?.isTrackingGranted} />
-        </View>
+                  <View style={styles.card}>
+                    <View style={styles.inputContainer}>
+                      <View style={styles.inputLabelRow}>
+                        <Ionicons name="person-outline" size={13} color={COLORS.accentCyan} />
+                        <Text style={styles.inputLabel}>{t('yourName')}</Text>
+                      </View>
+                      <View style={[styles.inputWrapper, isInputFocused && styles.inputWrapperFocused]}>
+                        <TextInput
+                          style={styles.input}
+                          onFocus={() => setIsInputFocused(true)}
+                          onBlur={() => setIsInputFocused(false)}
+                          placeholder={t('enterName')}
+                          placeholderTextColor={COLORS.textDim}
+                          value={username}
+                          onChangeText={setUsername}
+                          autoCapitalize="words"
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                        />
+                      </View>
+                    </View>
+
+                    {recentCodes && recentCodes.length > 0 && (
+                      <TouchableOpacity
+                        style={styles.quickJoinCard}
+                        onPress={() => handleQuickJoinRoom?.(recentCodes[0])}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.quickJoinLeft}>
+                          <View style={styles.quickJoinIconCircle}>
+                            <Ionicons name="flash" size={16} color={COLORS.accentCyan} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.quickJoinSub}>{t('lastConvoyLabel')}</Text>
+                            <Text style={styles.quickJoinCode}>{recentCodes[0]}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.quickJoinPill}>
+                          <Text style={styles.quickJoinPillText}>{t('quickConnect')}</Text>
+                          <Ionicons name="arrow-forward" size={13} color={COLORS.bgPrimary} />
+                        </View>
+                      </TouchableOpacity>
+                    )}
+
+                    <View style={styles.lobbyActionsStack}>
+                      <TouchableOpacity style={styles.actionCardPrimary} onPress={handleCreateRoom} activeOpacity={0.85}>
+                        <View style={styles.actionCardLeft}>
+                          <View style={styles.actionIconCirclePrimary}>
+                            <Ionicons name="add-circle" size={24} color={COLORS.bgPrimary} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.actionTitlePrimary}>{t('createConvoy')}</Text>
+                            <Text style={styles.actionSubPrimary}>{t('createSub')}</Text>
+                          </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={COLORS.bgPrimary} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.actionCardSecondary}
+                        onPress={() => setLobbyMode('join')}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.actionCardLeft}>
+                          <View style={styles.actionIconCircleSecondary}>
+                            <Ionicons name="key-outline" size={22} color={COLORS.accentCyan} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.actionTitleSecondary}>{t('joinConvoy')}</Text>
+                            <Text style={styles.actionSubSecondary}>{t('joinSub')}</Text>
+                          </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <RewardedAdButton
+                      isAdFree={ads?.isAdFree}
+                      remainingHours={ads?.adFreeRemainingHours}
+                      onPress={ads?.showRewardedAd}
+                      onResetTest={ads?.resetAdFreeForTest}
+                      isLoading={ads?.isRewardedLoading}
+                      t={t}
+                      style={{ marginTop: 10 }}
+                      hideWhenActive={true}
+                    />
+                  </View>
+                </Animated.View>
+              )}
+            </View>
+
+            <ConvoyBanner isAdFree={ads?.isAdFree} isTrackingGranted={ads?.isTrackingGranted} />
+          </ScrollView>
+        </KeyboardAvoidingView>
         {overlays}
       </SafeAreaView>
     </TouchableWithoutFeedback>
